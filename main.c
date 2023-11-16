@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <conio.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <limits.h>
@@ -76,6 +75,7 @@ void free_dirs(char ** dirs, size_t len)
 
 int main()
 {
+	setbuf(stdout, 0);
 	refresh_cwd();
 	size_t curpos = 0;
 	char ** dirs;
@@ -95,21 +95,36 @@ int main()
 			puts(dirs[i]);
 		}
 		char key;
-		do { key = getch(); } while(!is_control_key(key));
+		do { key = getchar(); } while(!is_control_key(key));
 		switch(key)
 		{
 			case KEY_UP:
 				--curpos;
-				printf("curpos : %llu\n", curpos);
-				printf("dirs_len : %llu\n", dirs_len);
-				if(curpos > dirs_len)
-					curpos = dirs_len;
+//				printf("curpos : %llu\n", curpos);
+//				printf("dirs_len : %llu\n", dirs_len);
+				if(curpos >= dirs_len)
+					curpos = dirs_len - 1;
 				refresh_subdirs = false;
+				break;
 			case KEY_DOWN:
 				++curpos;
-				if(curpos > dirs_len)
-					curpos = dirs_len;
+				if(curpos >= dirs_len)
+					curpos = dirs_len - 1;
 				refresh_subdirs = false;
+				break;
+			case KEY_BACK:
+				rewind_dir();
+				curpos = 0;
+				refresh_subdirs = true;
+				break;
+			case KEY_ENTER:
+				enter_dir(dirs[curpos]);
+				curpos = 0;
+				refresh_subdirs = true;
+				break;
+			default:
+				refresh_subdirs = false;
+				break;
 		}
 		if(refresh_subdirs)
 			free_dirs(dirs, dirs_len);
