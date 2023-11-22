@@ -2,17 +2,13 @@
 // Created by César B. on 11/16/2023.
 //
 
+/// fio.h - shared files/folder I/O code
+
 #pragma once
 
 #include <dirent.h>
 #include <stdbool.h>
 
-DIR * g_cwd;
-
-void refresh_cwd();
-
-void rewind_dir();
-
-void enter_dir(char * dir);
+char * get_cwd();
 
 bool is_folder(char * name);

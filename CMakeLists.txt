@@ -8,6 +8,6 @@ add_executable(storage_manager main.c
         dir_tree/dir_tree.h
         dir_tree/mk.c
         dir_tree/internal.h
-        shared/cwd.h
-        shared/cwd.c
+        shared/fio.h
+        shared/fio.c
 )

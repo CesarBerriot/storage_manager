@@ -14,6 +14,7 @@ typedef struct dir_tree_file
 
 typedef struct dir_tree_dir
 {
+	char * name;
 	struct dir_tree_dir ** dirs;
 	dir_tree_file_s ** files;
 	size_t dirs_len;
