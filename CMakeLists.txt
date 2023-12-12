@@ -10,4 +10,7 @@ add_executable(storage_manager main.c
         dir_tree/internal.h
         shared/fio.h
         shared/fio.c
+        luigi/luigi.h
 )
+
+target_link_libraries(storage_manager user32.lib gdi32.lib)
