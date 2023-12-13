@@ -1,0 +1,6 @@
+#pragma pop_macro("tree")
+#pragma pop_macro("dir")
+#pragma pop_macro("path")
+#pragma pop_macro("path_len")
+#pragma pop_macro("depth")
+#pragma pop_macro("cursor")

@@ -41,24 +41,51 @@ dir_tree_dir_s mk_dir_tree_dir(char * path, char * name)
 	char * new_path;
 	char ** dir_names;
 	char ** file_names;
+
 	memset(&result, 0, sizeof(dir_tree_dir_s));
+
 	new_path = malloc(strlen(path) + strlen(name) + 2);
 	sprintf(new_path, "%s/%s", path, name);
+	size_t new_path_len = strlen(new_path);
+
 	read_subobjects(new_path, &dir_names, &result.dirs_len, true);
 	read_subobjects(new_path, &file_names, &result.files_len, false);
+
 	result.dirs = malloc(sizeof(uintptr_t) * result.dirs_len);
 	for(size_t i = 0; i < result.dirs_len; ++i)
 	{
-		result.dirs[i] = malloc(sizeof(dir_tree_dir_s));
-		*result.dirs[i] = mk_dir_tree_dir(new_path, dir_names[i]);
-		result.dirs[i]->name = dir_names[i];
+		struct dir_tree_dir * dir =
+			result.dirs[i] = malloc(sizeof(dir_tree_dir_s));
+		*dir = mk_dir_tree_dir(new_path, dir_names[i]);
+		dir->name = dir_names[i];
+		result.size += dir->size;
 	}
+
 	result.files = malloc(sizeof(uintptr_t) * result.files_len);
 	for(size_t i = 0; i < result.files_len; ++i)
 	{
-		result.files[i] = malloc(sizeof(dir_tree_file_s));
-		result.files[i]->name = file_names[i];
-		result.files[i]->size = 0; //TODO actually acquire the size
+		dir_tree_file_s * file_info =
+			result.files[i] = malloc(sizeof(dir_tree_file_s));
+
+		char * filename =
+			file_info->name = file_names[i];
+
+		char * full_file_path = malloc(new_path_len + strlen(filename) + 2);
+		sprintf(full_file_path, "%s/%s", new_path, filename);
+
+		FILE * file = fopen(full_file_path, "rb");
+
+		free(full_file_path);
+
+		if(!file) // TODO do smth about that
+		{
+			file_info->size = 0;
+			continue;
+		}
+		fseek(file, 0, SEEK_END);
+		file_info->size = ftell(file);
+		fclose(file);
+		result.size += file_info->size;
 	}
 //	DIR * dirstrm = opendir(new_path);
 //	assert(dirstrm);

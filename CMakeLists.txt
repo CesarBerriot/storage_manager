@@ -11,6 +11,8 @@ add_executable(storage_manager main.c
         shared/fio.h
         shared/fio.c
         luigi/luigi.h
+        ref_logic.def
+        unref_logic.def
 )
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)

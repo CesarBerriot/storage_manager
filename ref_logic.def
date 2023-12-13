@@ -1,0 +1,13 @@
+#pragma push_macro("tree")
+#pragma push_macro("dir")
+#pragma push_macro("path")
+#pragma push_macro("path_len")
+#pragma push_macro("depth")
+#pragma push_macro("cursor")
+
+#define tree (g_logic.tree)
+#define dir (g_logic.current_dir)
+#define path (g_logic.current_dir_path)
+#define path_len (g_logic.current_dir_path_len)
+#define depth (g_logic.current_dir_depth)
+#define cursor (g_logic.cursor_pos)
