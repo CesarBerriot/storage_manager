@@ -2,7 +2,11 @@
 // Created by César B. on 10/16/2023.
 //
 
-// TODO try add to both g_ui.console_code.content and g_ui.console_code.lines[last_index].bytes so UICode can be concatenated
+/*
+ * TODO :
+ * - try add to both g_ui.console_code.content and g_ui.console_code.lines[last_index].bytes so UICode can be concatenated
+ * - make it so files and folders can be scrolled
+ */
 
 #include <stdio.h>
 #include <stdbool.h>
