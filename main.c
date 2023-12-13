@@ -327,8 +327,8 @@ int main()
 	// @formatter:off
 	g_ui.window = UIWindowCreate(NULL, 0, "Storage Manager", 1300, 700);
 		g_ui.main_panel = UIPanelCreate(g_ui.window, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING);
-			g_ui.display_panel = UIPanelCreate(g_ui.main_panel, UI_PANEL_MEDIUM_SPACING | UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL);
-				g_ui.dirs_panel = UIPanelCreate(g_ui.main_panel, UI_PANEL_MEDIUM_SPACING | UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL | UI_PANEL_HORIZONTAL);
+			g_ui.display_panel = UIPanelCreate(g_ui.main_panel, UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL);
+				g_ui.dirs_panel = UIPanelCreate(g_ui.display_panel, UI_PANEL_MEDIUM_SPACING | UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL | UI_PANEL_HORIZONTAL);
 					g_ui.dir_names_panel = UIPanelCreate(g_ui.dirs_panel, UI_PANEL_MEDIUM_SPACING | UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL);
 					g_ui.dir_sizes_panel = UIPanelCreate(g_ui.dirs_panel, UI_PANEL_MEDIUM_SPACING | UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL);
 				g_ui.files_panel = UIPanelCreate(g_ui.display_panel, UI_PANEL_MEDIUM_SPACING | UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL | UI_PANEL_HORIZONTAL);
