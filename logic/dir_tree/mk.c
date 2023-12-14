@@ -6,7 +6,7 @@
 #include <malloc.h>
 #include <stdio.h>
 #include "dir_tree.h"
-#include "../shared/fio.h"
+#include "../../shared/fio.h"
 
 void read_subobjects(char * path, char *** out_objects, size_t * out_objects_len, bool dir_mode)
 {
