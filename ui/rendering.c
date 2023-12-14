@@ -49,12 +49,17 @@ void ui_create_all()
 	g_ui.enter_button->invoke = ui_enter_button_cb;
 	g_ui.next_button->invoke = ui_next_button_cb;
 	g_ui.previous_button->invoke = ui_previous_button_cb;
+
+	g_ui.dir_names_panel->gap = 1;
+	g_ui.dir_sizes_panel->gap = 1;
+	g_ui.file_names_panel->gap = 1;
+	g_ui.file_sizes_panel->gap = 1;
 }
 
 void ui_render()
 {
 	ui_render_console();
-	
+
 	// clear panels
 	UIElementDestroyDescendents(g_ui.dir_names_panel);
 	UIElementDestroyDescendents(g_ui.dir_sizes_panel);
@@ -85,21 +90,13 @@ void ui_render()
     ( \
         for(size_t i = 0; i < g_logic.current_dir->list##s_len; ++i) \
         { \
-            UILabel * label = \
-                UILabelCreate(g_ui.list##_names_panel, UI_ELEMENT_H_FILL, g_logic.current_dir->list##s[i]->name, -1); \
-            if(show_enter_button) \
-            { \
-                UIPanel * panel = UIPanelCreate(g_ui.list##_names_panel, UI_PANEL_HORIZONTAL | UI_ELEMENT_H_FILL); \
-                UIElementChangeParent(label, panel, NULL);                       \
-                UIButton * button = UIButtonCreate(panel, UI_BUTTON_SMALL | UI_BUTTON_CHECKED, "->", 3); \
-            } \
-            char * formatted_##list##_size_str = ui_format_file_size(g_logic.current_dir->list##s[i]->size); \
-            UILabelCreate(g_ui.list##_sizes_panel, UI_ELEMENT_H_FILL, formatted_##list##_size_str, -1); \
-            free(formatted_##list##_size_str); \
+            ui_render_list_item(g_ui.list##_names_panel, g_logic.current_dir->list##s[i]->element, false, g_logic.current_dir->list##s == g_logic.current_dir->dirs); \
+            ui_render_list_item(g_ui.list##_sizes_panel, g_logic.current_dir->list##s[i]->element, true, g_logic.current_dir->list##s == g_logic.current_dir->dirs); \
         } \
     )
 	RENDER_LIST(dir, true);
 	RENDER_LIST(file, false);
+
 #pragma pop_macro("RENDER_LIST")
 
 	// refresh UI elements
@@ -159,7 +156,7 @@ void ui_render_console()
 	// print the current directory
 	{
 		size_t current_dir_name_len =
-		g_logic.current_dir->name ? strlen(g_logic.current_dir->name) : 0;
+			g_logic.current_dir->name ? strlen(g_logic.current_dir->name) : 0;
 		char * dir_str = malloc(prefix_dir_len + current_dir_name_len + 2);
 		memcpy(dir_str, prefix_dir, prefix_dir_len + 1);
 		strcat(dir_str, current_dir_name_len ? g_logic.current_dir->name : "/");
@@ -213,6 +210,61 @@ void ui_render_console()
 #pragma pop_macro("UI_CLEAR_CONSOLE")
 #pragma pop_macro("UI_CONSOLE_APPEND")
 #pragma pop_macro("UI_CONSOLE_APPEND_BLANK")
+}
+
+
+UIPanel * ui_render_list_item(UIElement * parent, struct dir_tree_element tree_element, bool size_mode, bool dir_mode)
+{
+	UIPanel * panel = UIPanelCreate(parent, UI_PANEL_HORIZONTAL | UI_ELEMENT_H_FILL);
+	panel->gap = 3;
+	char * label_text;
+	label_text = size_mode ? ui_format_file_size(tree_element.size) : tree_element.name;
+	UILabelCreate(panel, UI_ELEMENT_H_FILL, label_text, -1);
+	if(size_mode)
+		free(label_text);
+	UIButton * button;
+#pragma push_macro("RENDER_LIST_BUTTON")
+#define RENDER_LIST_BUTTON(label, callback, use_small_buttons)                                                  \
+    DO_WHILE_FALSE                                                                                              \
+    (                                                                                                           \
+        button = UIButtonCreate(panel, (UI_BUTTON_SMALL * use_small_buttons) | UI_BUTTON_CHECKED, label, -1);   \
+        button->e.cp = tree_element.name;                                                                       \
+        button->invoke = callback;                                                                              \
+    )
+
+	if(size_mode)
+		RENDER_LIST_BUTTON("<->", ui_switch_file_size_display_unit, false);
+	else
+	{
+		RENDER_LIST_BUTTON("^", dir_mode ? ui_open_directory_in_explorer_cb : ui_select_file_in_explorer_cb, true);
+		RENDER_LIST_BUTTON("X", dir_mode ? ui_delete_directory_cb : ui_delete_file_cb, true);
+		if(dir_mode)
+			RENDER_LIST_BUTTON("->", ui_enter_directory_cb, true);
+	}
+
+#pragma pop_macro("RENDER_LIST_BUTTON")
+	return panel;
+}
+
+// TODO delete
+UIPanel * ui_render_list()
+{
+/*#define
+	for(size_t i = 0; i < g_logic.current_dir->list##s_len;
+	++i)
+	{
+		UILabel * label =
+		UILabelCreate(g_ui.list##_names_panel, UI_ELEMENT_H_FILL, g_logic.current_dir->list##s[i]->name, -1);
+		if(show_enter_button)
+		{
+			UIPanel * panel = UIPanelCreate(g_ui.list##_names_panel, UI_PANEL_HORIZONTAL | UI_ELEMENT_H_FILL);
+			UIElementChangeParent(label, panel, NULL);
+			UIButton * button = UIButtonCreate(panel, UI_BUTTON_SMALL | UI_BUTTON_CHECKED, "->", 3);
+		}
+		char * formatted_##list##_size_str = ui_format_file_size(g_logic.current_dir->list##s[i]->size);
+		UILabelCreate(g_ui.list##_sizes_panel, UI_ELEMENT_H_FILL, formatted_##list##_size_str, -1);
+		free(formatted_##list##_size_str);
+	}*/
 }
 
 char * ui_format_file_size(size_t size)

@@ -6,20 +6,40 @@
 
 #include <corecrt.h>
 
+struct dir_tree_element
+{
+	char * name;
+	size_t size;
+};
+
 typedef struct dir_tree_file
 {
-	char * name; //utf8 ?
-	size_t size;
+	union
+	{
+		struct dir_tree_element element;
+		struct
+		{
+			char * name;
+			size_t size;
+		};
+	};
 } dir_tree_file_s;
 
 typedef struct dir_tree_dir
 {
-	char * name;
+	union
+	{
+		struct dir_tree_element element;
+		struct
+		{
+			char * name;
+			size_t size;
+		};
+	};
 	struct dir_tree_dir ** dirs;
 	dir_tree_file_s ** files;
 	size_t dirs_len;
 	size_t files_len;
-	size_t size;
 } dir_tree_dir_s;
 
 typedef struct dir_tree
