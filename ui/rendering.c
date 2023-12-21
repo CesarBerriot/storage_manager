@@ -5,8 +5,9 @@
 #define UI_WINDOWS
 #define UI_IMPLEMENTATION
 
-#include <stdio.h>
 #include "ui.h"
+#include <stdio.h>
+#include <math.h>
 #include "../shared/macros.h"
 #include "../logic/logic.h"
 #include "rendering.h"
@@ -274,7 +275,7 @@ char * ui_format_file_size(size_t size)
 	while(size > 1000)
 	{
 		++index;
-		size /= 1000;
+		size = roundf(size / 1000.f);
 	}
 	char * result = malloc(20);
 	sprintf(result, "%llu %s", size, suffixes[index]);

@@ -20,3 +20,12 @@ bool is_folder(char * name)
 			return false;
 	return true;
 }
+
+void ensure_path_separator(char * path, char separator)
+{
+	char other_separator = separator == PS_SLASH ? PS_ANTISLASH : PS_SLASH;
+	char c;
+	for(char * ptr = path; c = *ptr; ++ptr)
+		if(c == other_separator)
+			*ptr = separator;
+}

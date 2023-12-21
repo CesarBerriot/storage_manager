@@ -50,3 +50,5 @@ typedef struct dir_tree
 void free_dir_tree(dir_tree_s tree);
 
 dir_tree_s mk_dir_tree();
+
+char * mk_dir_tree_path_str(dir_tree_dir_s * dir);

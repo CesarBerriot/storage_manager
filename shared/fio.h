@@ -12,3 +12,11 @@
 char * get_cwd();
 
 bool is_folder(char * name);
+
+enum PATH_SEPARATOR : char
+{
+	PS_SLASH = '/',
+	PS_ANTISLASH = '\\',
+};
+
+void ensure_path_separator(char * path, char separator);
