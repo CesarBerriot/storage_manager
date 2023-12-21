@@ -6,8 +6,8 @@
 
 #include <malloc.h>
 #include <string.h>
-#include <stdio.h>
 #include "ref_globals.def"
+#include "../ui/ui.h"
 
 struct g_logic_struct g_logic;
 
@@ -43,6 +43,7 @@ void logic_reload_tree()
 	path = new_path;
 	dir = path[path_len - 1];
 	cursor = 0;
+	ui_log("reloaded the architecture tree");
 }
 
 void logic_load_selected_directory()

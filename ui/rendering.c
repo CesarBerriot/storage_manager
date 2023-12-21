@@ -8,6 +8,7 @@
 #include "ui.h"
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "../shared/macros.h"
 #include "../logic/logic.h"
 #include "rendering.h"
@@ -296,14 +297,15 @@ char * ui_format_file_size(size_t size)
 
 void ui_log(char * msg)
 {
-	// TODO timestamp ? got some code that does that in the UE5 subsystem tool already
-	static char * prefix = "[log] ";
-	static size_t prefix_len = 6;
-	size_t msg_len = strlen(msg);
-	char * log_msg = malloc(prefix_len + msg_len + 1);
-	memcpy(log_msg, prefix, prefix_len);
-	memcpy(log_msg + prefix_len, msg, msg_len + 1);
-	UICodeInsertContent(g_ui.log_code, log_msg, prefix_len + msg_len + 1, false);
+	time_t current_time = time(NULL);
+	struct tm * tm = localtime(&current_time);
+	char * log_msg = malloc(strlen(msg) + 17); // max required characters for timestamp is 17. yes I did count myself like a fucking idiot
+	sprintf(log_msg, "[log] [%s%i:%s%i:%s%i] %s"
+			, tm->tm_hour > 9 ? "" : "0", tm->tm_hour
+			, tm->tm_min > 9 ? "" : "0", tm->tm_min
+			, tm->tm_sec > 9 ? "" : "0", tm->tm_sec
+			, msg);
+	UICodeInsertContent(g_ui.log_code, log_msg, -1, false);
 	UIElementRefresh(g_ui.log_code);
 	free(log_msg);
 }

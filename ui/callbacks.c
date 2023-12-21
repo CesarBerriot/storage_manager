@@ -27,7 +27,6 @@ void ui_rewind_button_cb(void *)
 {
 	logic_rewind_directory();
 	ui_render();
-	ui_log("test");
 }
 
 void ui_next_button_cb(void *)
