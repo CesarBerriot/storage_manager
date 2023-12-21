@@ -5,6 +5,8 @@
 #pragma once
 
 
+void ui_clear_log_button_cb(void *);
+
 void ui_reload_button_cb(void *);
 
 void ui_rewind_button_cb(void *);

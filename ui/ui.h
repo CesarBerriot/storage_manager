@@ -22,6 +22,9 @@ extern struct g_ui_struct
 	UIPanel	 	* 						file_names_panel;
 	UIPanel	 	* 						file_sizes_panel;
 	UICode	 	* 				console_code;
+	UIPanel	 	* 				log_panel;
+	UICode	 	* 					log_code;
+	UIButton 	* 					clear_log_button;
 	UIPanel	 	* 			button_panel;
 	UIButton 	* 				reload_button;
 	UIButton 	* 				rewind_button;

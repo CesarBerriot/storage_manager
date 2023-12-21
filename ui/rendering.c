@@ -25,7 +25,7 @@ void ui_create_all()
 		UIElement * temp;
 		g_ui.window = UIWindowCreate(NULL, 0, "Storage Manager", 1300, 700);
 			g_ui.main_panel = UIPanelCreate(g_ui.window, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING);
-				g_ui.display_modes_pane = UITabPaneCreate(g_ui.main_panel, UI_FILL_ALL, "gui\tconsole");
+				g_ui.display_modes_pane = UITabPaneCreate(g_ui.main_panel, UI_FILL_ALL, "gui\tconsole\tlog");
 					g_ui.gui_display_pane = UISplitPaneCreate(g_ui.display_modes_pane, UI_FILL_ALL | UI_SPLIT_PANE_VERTICAL, .5f);
 						g_ui.dirs_pane = UISplitPaneCreate(g_ui.gui_display_pane, UI_FILL_ALL, .55f);
 							temp = UITabPaneCreate(g_ui.dirs_pane, UI_FILL_ALL, "directories");
@@ -38,6 +38,9 @@ void ui_create_all()
 							temp = UITabPaneCreate(g_ui.files_pane, UI_FILL_ALL, "sizes");
 							g_ui.file_sizes_panel = UIPanelCreate(temp, GUI_LIST_FLAGS);
 					g_ui.console_code = UICodeCreate(g_ui.display_modes_pane, UI_ALIGN_CENTER | UI_FILL_ALL);
+					g_ui.log_panel = UIPanelCreate(g_ui.display_modes_pane, UI_FILL_ALL);
+						g_ui.log_code = UICodeCreate(g_ui.log_panel, UI_ALIGN_CENTER | UI_FILL_ALL);
+						g_ui.clear_log_button = UIButtonCreate(g_ui.log_panel, UI_ELEMENT_H_FILL, "Clear Log", -1);
 				g_ui.button_panel = UIPanelCreate(g_ui.main_panel, UI_PANEL_HORIZONTAL | UI_ELEMENT_H_FILL);
 					g_ui.reload_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Rld", -1);
 					g_ui.rewind_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Bck", -1);
@@ -47,16 +50,23 @@ void ui_create_all()
 	}
 	// @formatter:on
 
+	g_ui.dir_names_panel->gap = 1;
+	g_ui.dir_sizes_panel->gap = 1;
+	g_ui.file_names_panel->gap = 1;
+	g_ui.file_sizes_panel->gap = 1;
+
+	g_ui.log_panel->gap = 4;
+	// TODO find out why the border here gotta be rectified a bit
+	g_ui.log_panel->border.r += 4;
+	g_ui.clear_log_button->invoke = ui_clear_log_button_cb;
+
 	g_ui.reload_button->invoke = ui_reload_button_cb;
 	g_ui.rewind_button->invoke = ui_rewind_button_cb;
 	g_ui.enter_button->invoke = ui_enter_button_cb;
 	g_ui.next_button->invoke = ui_next_button_cb;
 	g_ui.previous_button->invoke = ui_previous_button_cb;
 
-	g_ui.dir_names_panel->gap = 1;
-	g_ui.dir_sizes_panel->gap = 1;
-	g_ui.file_names_panel->gap = 1;
-	g_ui.file_sizes_panel->gap = 1;
+	ui_log("initialized all ui elements");
 }
 
 void ui_render()
@@ -282,4 +292,29 @@ char * ui_format_file_size(size_t size)
 	char * result = malloc(20);
 	sprintf(result, "%llu %s", size, suffixes[index]);
 	return result;
+}
+
+void ui_log(char * msg)
+{
+	// TODO timestamp ? got some code that does that in the UE5 subsystem tool already
+	static char * prefix = "[log] ";
+	static size_t prefix_len = 6;
+	size_t msg_len = strlen(msg);
+	char * log_msg = malloc(prefix_len + msg_len + 1);
+	memcpy(log_msg, prefix, prefix_len);
+	memcpy(log_msg + prefix_len, msg, msg_len + 1);
+	UICodeInsertContent(g_ui.log_code, log_msg, prefix_len + msg_len + 1, false);
+	UIElementRefresh(g_ui.log_code);
+	free(log_msg);
+}
+
+void ui_clear_log()
+{
+	UI_FREE(g_ui.log_code->content);
+	UI_FREE(g_ui.log_code->lines);
+	g_ui.log_code->content = NULL;
+	g_ui.log_code->lines = NULL;
+	g_ui.log_code->contentBytes = 0;
+	g_ui.log_code->lineCount = 0;
+	UIElementRefresh(g_ui.log_code);
 }
