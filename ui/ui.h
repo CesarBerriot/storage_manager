@@ -23,6 +23,7 @@ extern struct g_ui_struct
 	UIPanel	 	* 						file_sizes_panel;
 	UICode	 	* 				console_code;
 	UIPanel	 	* 			button_panel;
+	UIButton 	* 				reload_button;
 	UIButton 	* 				rewind_button;
 	UIButton 	* 				enter_button;
 	UIButton 	* 				next_button;

@@ -12,6 +12,12 @@
 #include "../logic/logic.h"
 #include "../shared/fio.h"
 
+void ui_reload_button_cb(void *)
+{
+	logic_reload_tree();
+	ui_render();
+}
+
 void ui_rewind_button_cb(void *)
 {
 	logic_rewind_directory();
