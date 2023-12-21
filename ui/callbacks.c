@@ -7,6 +7,7 @@
 #include <windows.h>
 // #include <shlobj_core.h>
 #include <stdio.h>
+#include <shellapi.h>
 #include "callbacks.h"
 #include "../logic/logic.h"
 #include "../shared/fio.h"
@@ -66,7 +67,6 @@ void ui_open_directory_in_explorer_cb(char * directory)
 	memcpy(full_path_str, current_path_str, strlen(current_path_str) + 1);
 	strcat(full_path_str, directory);
 	ensure_path_separator(full_path_str, PS_ANTISLASH);
-	printf("path : %s\n", full_path_str);
 	ShellExecuteA(NULL, "open", full_path_str, NULL, NULL, SW_SHOW);
 	free(current_path_str);
 	free(full_path_str);
@@ -74,7 +74,33 @@ void ui_open_directory_in_explorer_cb(char * directory)
 
 void ui_delete_directory_cb(char * directory)
 {
-	printf("ui_delete_directory_cb : %s\n", directory);
+	char * cwd = get_cwd();
+	char * current_path_str = mk_dir_tree_path_str(g_logic.tree.root);
+	ensure_path_separator(current_path_str, PS_ANTISLASH);
+	char * full_dir_path = malloc(MAX_PATH + 1);
+	sprintf(full_dir_path, "%s\\%s%s", cwd, current_path_str, directory);
+	ensure_path_separator(full_dir_path, PS_SLASH);
+
+	// note : I tried my best to make smth cross-platform but neither remove() nor rmdir() would work on windows :/
+	// errno is EACCES. I tried to chmod(~0) the folder just in case, didn't change a thing.
+
+	// works for empty folders only.
+	// RemoveDirectoryA(full_file_path);
+
+	SHFILEOPSTRUCTA shell_operation = {
+		NULL,
+		FO_DELETE,
+		full_dir_path, // should be double-null terminated according to microsoft's documentation but I guess it doesn't care if you don't put in the multi-element operation flag (FOF_MULTIDESTFILES)
+		"\0", // destination arg
+		0, // flags
+		false, // (out) whether any delete operations were aborted
+		NULL, // (out) struct with info about renamed files. only used if you put in the FOF_WANTMAPPINGHANDLE flag
+		NULL // title of the dialog box if you put in the FOF_SIMPLEPROGRESS flag
+	};
+	SHFileOperationA(&shell_operation);
+
+	logic_reload_tree();
+	ui_render();
 }
 
 void ui_select_file_in_explorer_cb(char * file)
@@ -98,7 +124,14 @@ void ui_select_file_in_explorer_cb(char * file)
 
 void ui_delete_file_cb(char * file)
 {
-	printf("ui_delete_file_cb : %s\n", file);
+	char * cwd = get_cwd();
+	char * current_path_str = mk_dir_tree_path_str(g_logic.tree.root);
+	ensure_path_separator(current_path_str, PS_ANTISLASH);
+	char * full_file_path = malloc(MAX_PATH + 1);
+	sprintf(full_file_path, "%s\\%s%s", cwd, current_path_str, file);
+	remove(full_file_path);
+	logic_reload_tree();
+	ui_render();
 }
 
 void ui_switch_file_size_display_unit(char * file)

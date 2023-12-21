@@ -18,6 +18,8 @@ extern struct g_logic_struct
 
 void logic_analyze_current_directory();
 
+void logic_reload_tree();
+
 void logic_load_selected_directory();
 
 void logic_rewind_directory();
