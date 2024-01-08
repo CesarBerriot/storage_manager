@@ -21,9 +21,21 @@ add_executable(storage_manager main.c
         logic/logic.h
         logic/logic.c
         shared/macros.h
-        ui/ui.c
-)
+        ui/ui.c)
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 
+target_link_options(storage_manager PRIVATE
+        -fno-openacc
+)
 
+target_compile_options(storage_manager PRIVATE
+        # ensure easy portability
+        -fno-asm
+        -fno-builtin
+        # hardware acceleration
+        -fno-openacc
+        # silencing trivial warnings
+        -Wno-incompatible-pointer-types
+        -Wno-compare-distinct-pointer-types # broken on gcc ? check out RENDER_LIST() is rendering.c
+)

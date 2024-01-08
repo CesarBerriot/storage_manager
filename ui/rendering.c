@@ -104,8 +104,8 @@ void ui_render()
     ( \
         for(size_t i = 0; i < g_logic.current_dir->list##s_len; ++i) \
         { \
-            ui_render_list_item(g_ui.list##_names_panel, g_logic.current_dir->list##s[i]->element, false, g_logic.current_dir->list##s == g_logic.current_dir->dirs); \
-            ui_render_list_item(g_ui.list##_sizes_panel, g_logic.current_dir->list##s[i]->element, true, g_logic.current_dir->list##s == g_logic.current_dir->dirs); \
+            ui_render_list_item(g_ui.list##_names_panel, g_logic.current_dir->list##s[i]->element, false, g_logic.current_dir->list##s == (void*)g_logic.current_dir->dirs); \
+            ui_render_list_item(g_ui.list##_sizes_panel, g_logic.current_dir->list##s[i]->element, true, g_logic.current_dir->list##s == (void*)g_logic.current_dir->dirs); \
         } \
     )
 	RENDER_LIST(dir, true);
