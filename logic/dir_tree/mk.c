@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <Windows.h>
 #include "dir_tree.h"
+#include "../logic.h"
 #include "../../shared/fio.h"
 
 void read_subobjects(char * path, char *** out_objects, size_t * out_objects_len, bool dir_mode)
@@ -46,15 +47,6 @@ struct mk_dir_tree_dir_thread_args
 	size_t threading_depth;
 };
 
-struct mk_stats
-{
-	size_t thread_count;
-	size_t computed_directories_count;
-	bool is_done;
-	pthread_mutex_t thread_count_mutex;
-	pthread_mutex_t computed_directories_count_mutex;
-} g_mk_stats;
-
 // forwarded for the thread procedure
 dir_tree_dir_s mk_dir_tree_dir(char * path, char * name, size_t threading_depth);
 
@@ -62,23 +54,23 @@ dir_tree_dir_s mk_dir_tree_dir(char * path, char * name, size_t threading_depth)
 void * mk_dir_tree_dir_thread_proc(struct mk_dir_tree_dir_thread_args * args)
 {
 	// increase thread count stat
-	pthread_mutex_lock(&g_mk_stats.thread_count_mutex);
-	++g_mk_stats.thread_count;
-	pthread_mutex_unlock(&g_mk_stats.thread_count_mutex);
+	pthread_mutex_lock(&g_logic.analysis_stats.thread_count_mutex);
+	++g_logic.analysis_stats.thread_count;
+	pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);
 
 	// make the dir tree directory and free the arguments as they're no longer needed
 	*args->dir = mk_dir_tree_dir(args->path, args->name, args->threading_depth);
 	free(args);
 
 	// increase computed directories stat
-	pthread_mutex_lock(&g_mk_stats.computed_directories_count_mutex);
-	++g_mk_stats.computed_directories_count;
-	pthread_mutex_unlock(&g_mk_stats.computed_directories_count_mutex);
+	pthread_mutex_lock(&g_logic.analysis_stats.computed_directories_count_mutex);
+	++g_logic.analysis_stats.computed_directories_count;
+	pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);
 
 	// decrease thread count stat
-	pthread_mutex_lock(&g_mk_stats.thread_count_mutex);
-	--g_mk_stats.thread_count;
-	pthread_mutex_unlock(&g_mk_stats.thread_count_mutex);
+	pthread_mutex_lock(&g_logic.analysis_stats.thread_count_mutex);
+	--g_logic.analysis_stats.thread_count;
+	pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);
 }
 
 /// @param threading_depth current path depth, used to determine whether next recursive calls should be parallelized
@@ -145,9 +137,9 @@ dir_tree_dir_s mk_dir_tree_dir(char * path, char * name, size_t threading_depth)
 			dir->name = dir_names[i];
 			result.size += dir->size;
 
-			pthread_mutex_lock(&g_mk_stats.computed_directories_count_mutex);
-			++g_mk_stats.computed_directories_count;
-			pthread_mutex_unlock(&g_mk_stats.computed_directories_count_mutex);
+			pthread_mutex_lock(&g_logic.analysis_stats.computed_directories_count_mutex);
+			++g_logic.analysis_stats.computed_directories_count;
+			pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);
 		}
 
 	result.files = malloc(sizeof(uintptr_t) * result.files_len);
@@ -186,18 +178,18 @@ void * mk_dir_tree_debug_stats_thread_proc(void*)
      do                      												\
 	 {																		\
     	system("cls");														\
-		pthread_mutex_lock(&g_mk_stats.thread_count_mutex);					\
-		pthread_mutex_lock(&g_mk_stats.computed_directories_count_mutex);	\
+		pthread_mutex_lock(&g_logic.analysis_stats.thread_count_mutex);					\
+		pthread_mutex_lock(&g_logic.analysis_stats.computed_directories_count_mutex);	\
 		printf("thread count : %llu\ncomputed directories : %llu\n"			\
-		       , thread_count, g_mk_stats.computed_directories_count);		\
-		pthread_mutex_unlock(&g_mk_stats.thread_count_mutex);               \
-		pthread_mutex_unlock(&g_mk_stats.computed_directories_count_mutex);	\
+		       , thread_count, g_logic.analysis_stats.computed_directories_count);		\
+		pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);               \
+		pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);	\
 	} while(0)
 
 	clock_t prev = clock();
-	while(!g_mk_stats.is_done)
+	while(!g_logic.analysis_stats.is_done)
 	{
-		render(g_mk_stats.thread_count);
+		render(g_logic.analysis_stats.thread_count);
 		// todo use unistd
 		Sleep(100);
 	}
@@ -219,10 +211,10 @@ dir_tree_s mk_dir_tree()
 	char * cwd = get_cwd();
 
 	// initialize mk stats, init mk stat mutexes
-	memset(&g_mk_stats, 0, sizeof(struct mk_stats));
-	r = pthread_mutex_init(&g_mk_stats.thread_count_mutex, NULL);
+	memset(&g_logic.analysis_stats, 0, sizeof(struct g_logic_analysis_stats_struct));
+	r = pthread_mutex_init(&g_logic.analysis_stats.thread_count_mutex, NULL);
 	assert(!r);
-	r = pthread_mutex_init(&g_mk_stats.computed_directories_count_mutex, NULL);
+	r = pthread_mutex_init(&g_logic.analysis_stats.computed_directories_count_mutex, NULL);
 	assert(!r);
 
 	// initialize debug thread
@@ -232,15 +224,15 @@ dir_tree_s mk_dir_tree()
 
 	// run mk_dir_tree_dir()
 	*tree.root = mk_dir_tree_dir(cwd, "", 0);
-	g_mk_stats.is_done = true;
+	g_logic.analysis_stats.is_done = true;
 
 	// join debug thread
 	pthread_join(debug_thread, NULL);
 
 	// destroy mk stats, destroy mutexes
-	r = pthread_mutex_destroy(&g_mk_stats.thread_count_mutex);
+	r = pthread_mutex_destroy(&g_logic.analysis_stats.thread_count_mutex);
 	assert(!r);
-	r = pthread_mutex_destroy(&g_mk_stats.computed_directories_count_mutex);
+	r = pthread_mutex_destroy(&g_logic.analysis_stats.computed_directories_count_mutex);
 	assert(!r);
 
 	//free cwd

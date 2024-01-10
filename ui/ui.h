@@ -12,6 +12,8 @@
 extern struct g_ui_struct
 {
 	UIWindow 	*	window;
+	UIPanel	 	*		loading_panel;
+	UIGauge 	*			loading_gauge;
 	UIPanel	 	*		main_panel;
 	UITabPane 	*			display_modes_pane;
 	UISplitPane	* 				gui_display_pane;

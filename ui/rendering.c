@@ -13,15 +13,36 @@
 #include "../logic/logic.h"
 #include "rendering.h"
 
+void ui_create_loading_screen()
+{
+	// @formatter:off
+	enum
+	{
+		UI_FILL_ALL = UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL,
+		UI_LIST_FLAGS = UI_PANEL_SCROLL | UI_PANEL_MEDIUM_SPACING | UI_FILL_ALL
+	};
+	g_ui.window = UIWindowCreate(NULL, 0, "Storage Manager", 1300, 700);
+		g_ui.loading_panel = UIPanelCreate(g_ui.window, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING);
+	// @formatter:on
+}
+
+void ui_render_loading_screen()
+{
+
+}
 
 void ui_create_all()
 {
+	// if coming from the loading screen, make sure it gets cleared
+	if(g_ui.window)
+		UIElementDestroyDescendents(g_ui.window);
+
 	// @formatter:off
 	{
 		enum
 		{
 			UI_FILL_ALL = UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL,
-			GUI_LIST_FLAGS = UI_PANEL_SCROLL | UI_PANEL_MEDIUM_SPACING | UI_FILL_ALL
+			UI_LIST_FLAGS = UI_PANEL_SCROLL | UI_PANEL_MEDIUM_SPACING | UI_FILL_ALL
 		};
 		UIElement * temp;
 		g_ui.window = UIWindowCreate(NULL, 0, "Storage Manager", 1300, 700);
@@ -30,14 +51,14 @@ void ui_create_all()
 					g_ui.gui_display_pane = UISplitPaneCreate(g_ui.display_modes_pane, UI_FILL_ALL | UI_SPLIT_PANE_VERTICAL, .5f);
 						g_ui.dirs_pane = UISplitPaneCreate(g_ui.gui_display_pane, UI_FILL_ALL, .55f);
 							temp = UITabPaneCreate(g_ui.dirs_pane, UI_FILL_ALL, "directories");
-							g_ui.dir_names_panel = UIPanelCreate(temp, GUI_LIST_FLAGS);
+							g_ui.dir_names_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
 							temp = UITabPaneCreate(g_ui.dirs_pane, UI_FILL_ALL, "sizes");
-							g_ui.dir_sizes_panel = UIPanelCreate(temp, GUI_LIST_FLAGS);
+							g_ui.dir_sizes_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
 						g_ui.files_pane = UISplitPaneCreate(g_ui.gui_display_pane, UI_FILL_ALL, .6f);
 							temp = UITabPaneCreate(g_ui.files_pane, UI_FILL_ALL, "files");
-							g_ui.file_names_panel = UIPanelCreate(temp, GUI_LIST_FLAGS);
+							g_ui.file_names_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
 							temp = UITabPaneCreate(g_ui.files_pane, UI_FILL_ALL, "sizes");
-							g_ui.file_sizes_panel = UIPanelCreate(temp, GUI_LIST_FLAGS);
+							g_ui.file_sizes_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
 					g_ui.console_code = UICodeCreate(g_ui.display_modes_pane, UI_ALIGN_CENTER | UI_FILL_ALL);
 					g_ui.log_panel = UIPanelCreate(g_ui.display_modes_pane, UI_FILL_ALL);
 						g_ui.log_code = UICodeCreate(g_ui.log_panel, UI_ALIGN_CENTER | UI_FILL_ALL);
@@ -104,8 +125,8 @@ void ui_render()
     ( \
         for(size_t i = 0; i < g_logic.current_dir->list##s_len; ++i) \
         { \
-            ui_render_list_item(g_ui.list##_names_panel, g_logic.current_dir->list##s[i]->element, false, g_logic.current_dir->list##s == (void*)g_logic.current_dir->dirs); \
-            ui_render_list_item(g_ui.list##_sizes_panel, g_logic.current_dir->list##s[i]->element, true, g_logic.current_dir->list##s == (void*)g_logic.current_dir->dirs); \
+            ui_render_list_item(g_ui.list##_names_panel, g_logic.current_dir->size, g_logic.current_dir->list##s[i]->element, false, g_logic.current_dir->list##s == (void*)g_logic.current_dir->dirs); \
+            ui_render_list_item(g_ui.list##_sizes_panel, g_logic.current_dir->size, g_logic.current_dir->list##s[i]->element, true, g_logic.current_dir->list##s == (void*)g_logic.current_dir->dirs); \
         } \
     )
 	RENDER_LIST(dir, true);
@@ -227,7 +248,7 @@ void ui_render_console()
 }
 
 
-UIPanel * ui_render_list_item(UIElement * parent, struct dir_tree_element tree_element, bool size_mode, bool dir_mode)
+UIPanel * ui_render_list_item(UIElement * parent, size_t parent_directory_size, struct dir_tree_element tree_element, bool size_mode, bool dir_mode)
 {
 	UIPanel * panel = UIPanelCreate(parent, UI_PANEL_HORIZONTAL | UI_ELEMENT_H_FILL);
 	panel->gap = 3;
@@ -245,6 +266,13 @@ UIPanel * ui_render_list_item(UIElement * parent, struct dir_tree_element tree_e
         button->e.cp = tree_element.name;                                                                       \
         button->invoke = callback;                                                                              \
     )
+
+	if(!size_mode)
+	{
+		UIGauge * gauge = UIGaugeCreate(panel, 0);
+		gauge->position = tree_element.size / (float)parent_directory_size;
+		UIElementRefresh(gauge);
+	}
 
 	if(size_mode)
 		RENDER_LIST_BUTTON("<->", ui_switch_file_size_display_unit, false);
@@ -300,11 +328,13 @@ void ui_log(char * msg)
 	time_t current_time = time(NULL);
 	struct tm * tm = localtime(&current_time);
 	char * log_msg = malloc(strlen(msg) + 17); // max required characters for timestamp is 17. yes I did count myself like a fucking idiot
-	sprintf(log_msg, "[log] [%s%i:%s%i:%s%i] %s"
-			, tm->tm_hour > 9 ? "" : "0", tm->tm_hour
-			, tm->tm_min > 9 ? "" : "0", tm->tm_min
-			, tm->tm_sec > 9 ? "" : "0", tm->tm_sec
-			, msg);
+	sprintf(
+		log_msg, "[log] [%s%i:%s%i:%s%i] %s"
+		, tm->tm_hour > 9 ? "" : "0", tm->tm_hour
+		, tm->tm_min > 9 ? "" : "0", tm->tm_min
+		, tm->tm_sec > 9 ? "" : "0", tm->tm_sec
+		, msg
+	);
 	UICodeInsertContent(g_ui.log_code, log_msg, -1, false);
 	UIElementRefresh(g_ui.log_code);
 	free(log_msg);

@@ -25,15 +25,21 @@ add_executable(storage_manager main.c
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 
+# todo finish setting up linker options
+
 target_link_options(storage_manager PRIVATE
         -fno-openacc
 )
+
+# todo finish setting up compiler options
 
 target_compile_options(storage_manager PRIVATE
         # ensure easy portability
         -fno-asm
         -fno-builtin
         # hardware acceleration
+        # turns out I had problems getting some performance out of openacc so I ended up
+        # just multithreading the whole thing myself using pthread and it works wonders
         -fno-openacc
         # silencing trivial warnings
         -Wno-incompatible-pointer-types
