@@ -186,6 +186,8 @@ void * mk_dir_tree_debug_stats_thread_proc(void*)
 		pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);	\
 	} while(0)
 
+	__ATOMIC_ACQUIRE;
+
 	clock_t prev = clock();
 	while(!g_logic.analysis_stats.is_done)
 	{
@@ -224,7 +226,11 @@ dir_tree_s mk_dir_tree()
 
 	// run mk_dir_tree_dir()
 	*tree.root = mk_dir_tree_dir(cwd, "", 0);
+
+	// inform other threads we're done with the analysis here, they don't need to know we're still destroying stuff
+	__ATOMIC_ACQUIRE;
 	g_logic.analysis_stats.is_done = true;
+	__ATOMIC_RELEASE; // note : the release here ain't really required but I still did it by safety, I might end up writing order-dependant code below later who knows
 
 	// join debug thread
 	pthread_join(debug_thread, NULL);
@@ -235,7 +241,7 @@ dir_tree_s mk_dir_tree()
 	r = pthread_mutex_destroy(&g_logic.analysis_stats.computed_directories_count_mutex);
 	assert(!r);
 
-	//free cwd
+	// free cwd
 	free(cwd);
 
 	return tree;

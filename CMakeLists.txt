@@ -40,7 +40,9 @@ target_compile_options(storage_manager PRIVATE
         # hardware acceleration
         # turns out I had problems getting some performance out of openacc so I ended up
         # just multithreading the whole thing myself using pthread and it works wonders
+        # I didn't try openmp yet, I might give it a try later, might even use opencl
         -fno-openacc
+        -fno-openmp
         # silencing trivial warnings
         -Wno-incompatible-pointer-types
         -Wno-compare-distinct-pointer-types # broken on gcc ? check out RENDER_LIST() is rendering.c
