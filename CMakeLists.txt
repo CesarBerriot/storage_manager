@@ -25,25 +25,47 @@ add_executable(storage_manager main.c
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 
-# todo finish setting up linker options
-
 target_link_options(storage_manager PRIVATE
+        # ensure easy portability
+        --entry=main
+        # hardware acceleration
         -fno-openacc
+        # other stuff
+        -pthread
 )
-
-# todo finish setting up compiler options
 
 target_compile_options(storage_manager PRIVATE
         # ensure easy portability
         -fno-asm
         -fno-builtin
+        -fno-plan9-extensions
+        -fsigned-bitfields
+        -fsigned-char
+        -fmax-include-depth=17 # keeping things organized. that's the lowest I could get without breaking mingw.
+        -fno-extended-identifiers
+        -fexec-charset=utf-8
+        -fshort-wchar
+        -fwide-exec-charset=utf-16be
+        -finput-charset=utf-8
         # hardware acceleration
         # turns out I had problems getting some performance out of openacc so I ended up
         # just multithreading the whole thing myself using pthread and it works wonders
         # I didn't try openmp yet, I might give it a try later, might even use opencl
         -fno-openacc
         -fno-openmp
+        # unrelated gcc optimization/code generation options
+        -O3
+        -fstack-reuse=all
+        -freg-struct-return # I never return large structure so this option's a plus. in case I gotta get large amounts of information out of a function I'll either take in a pointer to a struct I'll write into or return a pointer to a struct I allocated.
+        -fno-exceptions
+        -fno-common # prevents tentative definitions (treating uninitialized multiple definitions as an extern definition defined in a single translation unit)
+        -fshort-enums
+        # global preprocessor definitions
+        # -D SOME_DEFINITION_EXAMPLE
         # silencing trivial warnings
         -Wno-incompatible-pointer-types
         -Wno-compare-distinct-pointer-types # broken on gcc ? check out RENDER_LIST() is rendering.c
+        # other stuff
+        -pthread
+        # -flarge-source-files # enable if large headers get included into the program, like files bundled into arrays or whatever
 )
