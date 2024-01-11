@@ -19,6 +19,7 @@ extern struct g_ui_struct
 	UILabel		*				loading_screen_thread_count_label;
 	UILabel		*				loading_screen_max_thread_count_label;
 	UILabel		*				loading_screen_computed_directories_count_label;
+	UILabel		*				loading_screen_status_label;
 	UIPanel	 	*			main_panel;
 	UITabPane 	*				display_modes_pane;
 	UISplitPane	* 					gui_display_pane;

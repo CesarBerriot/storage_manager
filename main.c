@@ -14,24 +14,37 @@
 #include "ui/ui.h"
 #include <windows.h>
 
-volatile bool ui_thread_initialized;
+enum
+{
+	F_UI_THREAD_INITIALIZED,
+	F_UI_THREAD_ALIVE
+};
+
+volatile uint8_t flags;
 
 void * ui_thread_proc(void *)
 {
+	flags |= F_UI_THREAD_ALIVE;
+	__ATOMIC_RELEASE;
+
 	UIInitialise();
 	g_ui.window = UIWindowCreate(NULL, 0, "Storage Manager", 1300, 700);
 	g_ui.root_panel = UIPanelCreate(g_ui.window, UI_PANEL_GRAY);
 
 	__ATOMIC_ACQUIRE;
-	ui_thread_initialized = true;
+	flags |= F_UI_THREAD_INITIALIZED;
 	__ATOMIC_RELEASE;
 
 	UIMessageLoop();
+
+	__ATOMIC_ACQUIRE;
+	flags ^= flags | F_UI_THREAD_ALIVE; // todo fix
+	flags = 0;
 }
 
 void * loading_screen_loop_thread_proc()
 {
-	while(!g_logic.analysis_stats.is_done)
+	while(!g_logic.analysis_stats.is_done && flags & F_UI_THREAD_ALIVE)
 	{
 		ui_render_loading_screen();
 		Sleep(50);
@@ -50,7 +63,7 @@ int main()
 	pthread_t ui_thread;
 	pthread_t loading_screen_thread;
 
-	ui_thread_initialized = false;
+	flags = 0;
 
 	__ATOMIC_ACQUIRE;
 
@@ -63,7 +76,7 @@ int main()
 
 	__ATOMIC_ACQUIRE;
 
-	while(!ui_thread_initialized);
+	while(!((flags & F_UI_THREAD_INITIALIZED) > 0));
 
 	__ATOMIC_RELEASE;
 

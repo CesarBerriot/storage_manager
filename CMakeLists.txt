@@ -3,7 +3,8 @@ project(storage_manager C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(storage_manager main.c
+add_executable(storage_manager WIN32
+        main.c
         logic/dir_tree/dir_tree.c
         logic/dir_tree/dir_tree.h
         logic/dir_tree/mk.c
@@ -63,6 +64,7 @@ target_compile_options(storage_manager PRIVATE
         # global preprocessor definitions
         -DUI_LOADING_SCREEN_LABELS_STR_BUFFERS_LENGTH=100
         -DLOGIC_INFINITE_ANALYSIS=1 # make analysis of the file architecture infinite (basically adds for(;;)) for debugging purposes
+        -DLOGIC_ANALYSIS_MAX_THREADING_DEPTH=5
         # silencing trivial warnings
         -Wno-incompatible-pointer-types
         -Wno-compare-distinct-pointer-types # broken on gcc ? check out RENDER_LIST() is rendering.c

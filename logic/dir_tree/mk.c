@@ -56,6 +56,8 @@ void * mk_dir_tree_dir_thread_proc(struct mk_dir_tree_dir_thread_args * args)
 	// increase thread count stat
 	pthread_mutex_lock(&g_logic.analysis_stats.thread_count_mutex);
 	++g_logic.analysis_stats.thread_count;
+	if(g_logic.analysis_stats.thread_count > g_logic.analysis_stats.max_recorded_threads)
+		g_logic.analysis_stats.max_recorded_threads = g_logic.analysis_stats.thread_count;
 	pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);
 
 	// make the dir tree directory and free the arguments as they're no longer needed
@@ -77,7 +79,7 @@ void * mk_dir_tree_dir_thread_proc(struct mk_dir_tree_dir_thread_args * args)
 dir_tree_dir_s mk_dir_tree_dir(char * path, char * name, size_t threading_depth)
 {
 	// max depth at which recursive calls for subdirectories will be parallelized
-	enum { MAX_THREADING_DEPTH = 5 };
+	enum { MAX_THREADING_DEPTH = LOGIC_ANALYSIS_MAX_THREADING_DEPTH };
 
 	// used to check the result of pthread calls
 	int r;
@@ -171,36 +173,6 @@ dir_tree_dir_s mk_dir_tree_dir(char * path, char * name, size_t threading_depth)
 	return result;
 }
 
-void * mk_dir_tree_debug_stats_thread_proc(void *)
-{
-	return NULL; // todo remove
-#pragma push_macro("render")
-#define render(thread_count)                                                \
-     do                                                                    \
-     {                                                                        \
-        system("cls");                                                        \
-        pthread_mutex_lock(&g_logic.analysis_stats.thread_count_mutex);                    \
-        pthread_mutex_lock(&g_logic.analysis_stats.computed_directories_count_mutex);    \
-        printf("thread count : %llu\ncomputed directories : %llu\n"            \
-               , thread_count, g_logic.analysis_stats.computed_directories_count);        \
-        pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);               \
-        pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);    \
-    } while(0)
-
-	__ATOMIC_ACQUIRE;
-
-	clock_t prev = clock();
-	while(!g_logic.analysis_stats.is_done)
-	{
-		render(g_logic.analysis_stats.thread_count);
-		// todo use unistd
-		Sleep(100);
-	}
-	render(0);
-	printf("time : %4.2fs\n", (clock() - prev) / 1000.f);
-#pragma pop_macro("render")
-}
-
 dir_tree_s mk_dir_tree()
 {
 	// used for pthread function call results
@@ -220,11 +192,6 @@ dir_tree_s mk_dir_tree()
 	r = pthread_mutex_init(&g_logic.analysis_stats.computed_directories_count_mutex, NULL);
 	assert(!r);
 
-	// initialize debug thread
-	pthread_t debug_thread;
-	r = pthread_create(&debug_thread, NULL, mk_dir_tree_debug_stats_thread_proc, NULL);
-	assert(!r);
-
 	// run mk_dir_tree_dir()
 	*tree.root = mk_dir_tree_dir(cwd, "", 0);
 
@@ -238,9 +205,6 @@ dir_tree_s mk_dir_tree()
 	__ATOMIC_ACQUIRE;
 	g_logic.analysis_stats.is_done = true;
 	__ATOMIC_RELEASE; // note : the release here ain't really required but I still did it by safety, I might end up writing order-dependant code below later who knows
-
-	// join debug thread
-	pthread_join(debug_thread, NULL);
 
 	// destroy mk stats, destroy mutexes
 	r = pthread_mutex_destroy(&g_logic.analysis_stats.thread_count_mutex);
