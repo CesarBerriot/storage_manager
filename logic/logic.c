@@ -11,6 +11,11 @@
 
 struct g_logic_struct g_logic;
 
+void logic_initialize()
+{
+	memset(&g_logic, 0, sizeof(struct g_logic_struct));
+}
+
 void logic_analyze_current_directory()
 {
 	tree = mk_dir_tree();

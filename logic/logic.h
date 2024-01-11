@@ -21,11 +21,13 @@ extern struct g_logic_struct
 		size_t thread_count; // current amount of working threads during analysis
 		size_t max_recorded_threads; // max amount of threads recorded at once during analysis. used by the loading screen to display the loading gauge. uses thread_count's mutex. todo implement
 		size_t computed_directories_count; // amount of folders the analysis went through
-		bool is_done; // analysis has finished
+		volatile bool is_done; // analysis has finished
 		pthread_mutex_t thread_count_mutex;
 		pthread_mutex_t computed_directories_count_mutex;
 	} analysis_stats;
 } g_logic;
+
+void logic_initialize();
 
 void logic_analyze_current_directory();
 

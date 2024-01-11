@@ -61,11 +61,15 @@ target_compile_options(storage_manager PRIVATE
         -fno-common # prevents tentative definitions (treating uninitialized multiple definitions as an extern definition defined in a single translation unit)
         -fshort-enums
         # global preprocessor definitions
-        # -D SOME_DEFINITION_EXAMPLE
+        -DUI_LOADING_SCREEN_LABELS_STR_BUFFERS_LENGTH=100
+        -DLOGIC_INFINITE_ANALYSIS=1 # make analysis of the file architecture infinite (basically adds for(;;)) for debugging purposes
         # silencing trivial warnings
         -Wno-incompatible-pointer-types
         -Wno-compare-distinct-pointer-types # broken on gcc ? check out RENDER_LIST() is rendering.c
         # other stuff
         -pthread
         # -flarge-source-files # enable if large headers get included into the program, like files bundled into arrays or whatever
+        # -o C:/storage_manager.exe
 )
+
+set(RUNTIME_OUTPUT_DIRECTORY C:/)

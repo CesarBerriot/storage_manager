@@ -13,29 +13,131 @@
 #include "../logic/logic.h"
 #include "rendering.h"
 
+void ui_force_full_redraw()
+{
+	// sketchy af but that's the only way I found. WM_PAINT doesn't work btw idk why
+	SendMessageA(g_ui.window->hwnd, WM_MOUSEMOVE, 0, 0);
+}
+
 void ui_create_loading_screen()
 {
-	// @formatter:off
+	UIElementDestroyDescendents(g_ui.root_panel);
+
+	enum { LABEL_BUFFERS_LENGTH = UI_LOADING_SCREEN_LABELS_STR_BUFFERS_LENGTH };
 	enum
 	{
 		UI_FILL_ALL = UI_ELEMENT_H_FILL | UI_ELEMENT_V_FILL,
 		UI_LIST_FLAGS = UI_PANEL_SCROLL | UI_PANEL_MEDIUM_SPACING | UI_FILL_ALL
 	};
-	g_ui.window = UIWindowCreate(NULL, 0, "Storage Manager", 1300, 700);
-		g_ui.loading_panel = UIPanelCreate(g_ui.window, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING);
+	// @formatter:off
+	g_ui.loading_screen_panel = UIPanelCreate(g_ui.root_panel, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING);
+		g_ui.loading_screen_spacer = UISpacerCreate(g_ui.loading_screen_panel, 0, 0, 0);
+		UILabelCreate(g_ui.loading_screen_panel, 0, "loading", -1);
+		g_ui.loading_screen_gauge = UIGaugeCreate(g_ui.loading_screen_panel, 0);
+		g_ui.loading_screen_thread_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, "", -1);
+		g_ui.loading_screen_max_thread_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, "", -1);
+		g_ui.loading_screen_computed_directories_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, "", -1);
 	// @formatter:on
+	UIElementRefresh(g_ui.root_panel);
+	ui_force_full_redraw();
+}
+
+void ui_resize_loading_screen_panel()
+{
+	UIElement * loading_screen_elements[4] = {
+		g_ui.loading_screen_gauge, g_ui.loading_screen_thread_count_label,
+		g_ui.loading_screen_max_thread_count_label, g_ui.loading_screen_computed_directories_count_label
+	};
+
+
+	size_t sum_height = 0;
+	size_t max_width = 0;
+	for(register uint8_t i = 0; i < 4; ++i)
+	{
+		//printf("\033[%i;0H---------------------------\nbounds : { %llu, %llu }\t\t\t\t\nclip : { %llu, %llu }\t\t\t\t", i * 3, max_width);
+		UIElement * element = loading_screen_elements[i];
+		size_t width = UIElementMessage(element, UI_MSG_GET_WIDTH, 0, NULL);
+		sum_height += UIElementMessage(element, UI_MSG_GET_HEIGHT, 0, NULL);
+		printf("\033[%i;0H\ndesired width : %llu\t\t\t\t", i, width);
+		if(width > max_width)
+			max_width = width;
+	}
+	printf("\033[4;0H\nmax_width desired width : %llu\t\t\t\t", max_width);
+	printf("\033[5;0H\ncurrent panel width : %llu\t\t\t\t", UIElementMessage(g_ui.loading_screen_panel, UI_MSG_GET_WIDTH, 0, NULL));
+	size_t window_horizontal_middle = g_ui.window->e.bounds.r / 2;
+	size_t window_vertical_middle = g_ui.window->e.bounds.b / 2;
+	size_t max_width_half = max_width / 2;
+	size_t sum_height_half = sum_height / 2;
+	UIRectangle new_panel_bounds = {
+		window_horizontal_middle - max_width_half,
+		window_horizontal_middle + max_width_half,
+		0, // window_vertical_middle - sum_height_half,
+		g_ui.window->e.bounds.b // window_vertical_middle + sum_height_half
+	};
+	g_ui.loading_screen_spacer->height = window_vertical_middle - sum_height;
+	UIElementRefresh(g_ui.loading_screen_spacer);
+	UIElementMove(g_ui.loading_screen_panel, new_panel_bounds, false);
+//	UISpacer * spacer = UISpacerCreate(g_ui.loading_screen_panel, 0, 0, window_vertical_middle - sum_height_half);
+//	UIElement * child;
+//	for(child = g_ui.loading_screen_panel->e.children; child->next != spacer; child = child->next);
+//	child->next = NULL;
+//	spacer->e.next = g_ui.loading_screen_panel->e.children;
+//	g_ui.loading_screen_panel->e.children = spacer->e.next;
+
+	//UIElementRefresh(g_ui.loading_screen_panel);
+	//UIElementRepaint(g_ui.loading_screen_panel, NULL);
+	printf("\033[6;0H\nnew panel width : %llu\t\t\t\t", UIElementMessage(g_ui.loading_screen_panel, UI_MSG_GET_WIDTH, 0, NULL));
+	//UI_MSG_GET_WIDTH
+	ui_force_full_redraw();
 }
 
 void ui_render_loading_screen()
 {
+	enum { LABEL_BUFFERS_LENGTH = UI_LOADING_SCREEN_LABELS_STR_BUFFERS_LENGTH };
+	char * buffer = malloc(LABEL_BUFFERS_LENGTH);
 
+	// lock dir count mutex
+	pthread_mutex_lock(&g_logic.analysis_stats.computed_directories_count_mutex);
+
+	// refresh dir count label
+	snprintf(buffer, LABEL_BUFFERS_LENGTH, "parsed directories : %llu", g_logic.analysis_stats.computed_directories_count);
+	UIElementDestroy(g_ui.loading_screen_computed_directories_count_label);
+	g_ui.loading_screen_computed_directories_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, buffer, strlen(buffer));
+
+	// unlock dir count mutex
+	pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);
+
+	// lock thread count label
+	pthread_mutex_lock(&g_logic.analysis_stats.thread_count_mutex);
+
+	// refresh thread count label
+	snprintf(buffer, LABEL_BUFFERS_LENGTH, "threads : %llu", g_logic.analysis_stats.thread_count);
+	UIElementDestroy(g_ui.loading_screen_thread_count_label);
+	g_ui.loading_screen_thread_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, buffer, strlen(buffer));
+
+	// refresh max thread count label
+	snprintf(buffer, LABEL_BUFFERS_LENGTH, "max simultaneous threads : %llu", g_logic.analysis_stats.max_recorded_threads);
+	UIElementDestroy(g_ui.loading_screen_max_thread_count_label);
+	g_ui.loading_screen_max_thread_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, buffer, strlen(buffer));
+
+	// unlock thread count mutex
+	pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);
+
+
+	ui_resize_loading_screen_panel();
+
+	UIElementRefresh(g_ui.loading_screen_panel);
+
+	free(buffer);
+
+	ui_force_full_redraw();
 }
 
 void ui_create_all()
 {
 	// if coming from the loading screen, make sure it gets cleared
-	if(g_ui.window)
-		UIElementDestroyDescendents(g_ui.window);
+	UIElementDestroyDescendents(g_ui.root_panel);
+	UIElementRefresh(g_ui.root_panel);
 
 	// @formatter:off
 	{
@@ -45,30 +147,29 @@ void ui_create_all()
 			UI_LIST_FLAGS = UI_PANEL_SCROLL | UI_PANEL_MEDIUM_SPACING | UI_FILL_ALL
 		};
 		UIElement * temp;
-		g_ui.window = UIWindowCreate(NULL, 0, "Storage Manager", 1300, 700);
-			g_ui.main_panel = UIPanelCreate(g_ui.window, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING);
-				g_ui.display_modes_pane = UITabPaneCreate(g_ui.main_panel, UI_FILL_ALL, "gui\tconsole\tlog");
-					g_ui.gui_display_pane = UISplitPaneCreate(g_ui.display_modes_pane, UI_FILL_ALL | UI_SPLIT_PANE_VERTICAL, .5f);
-						g_ui.dirs_pane = UISplitPaneCreate(g_ui.gui_display_pane, UI_FILL_ALL, .55f);
-							temp = UITabPaneCreate(g_ui.dirs_pane, UI_FILL_ALL, "directories");
-							g_ui.dir_names_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
-							temp = UITabPaneCreate(g_ui.dirs_pane, UI_FILL_ALL, "sizes");
-							g_ui.dir_sizes_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
-						g_ui.files_pane = UISplitPaneCreate(g_ui.gui_display_pane, UI_FILL_ALL, .6f);
-							temp = UITabPaneCreate(g_ui.files_pane, UI_FILL_ALL, "files");
-							g_ui.file_names_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
-							temp = UITabPaneCreate(g_ui.files_pane, UI_FILL_ALL, "sizes");
-							g_ui.file_sizes_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
-					g_ui.console_code = UICodeCreate(g_ui.display_modes_pane, UI_ALIGN_CENTER | UI_FILL_ALL);
-					g_ui.log_panel = UIPanelCreate(g_ui.display_modes_pane, UI_FILL_ALL);
-						g_ui.log_code = UICodeCreate(g_ui.log_panel, UI_ALIGN_CENTER | UI_FILL_ALL);
-						g_ui.clear_log_button = UIButtonCreate(g_ui.log_panel, UI_ELEMENT_H_FILL, "Clear Log", -1);
-				g_ui.button_panel = UIPanelCreate(g_ui.main_panel, UI_PANEL_HORIZONTAL | UI_ELEMENT_H_FILL);
-					g_ui.reload_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Rld", -1);
-					g_ui.rewind_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Bck", -1);
-					g_ui.enter_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Ent", -1);
-					g_ui.next_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Nxt", -1);
-					g_ui.previous_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Prv", -1);
+		g_ui.main_panel = UIPanelCreate(g_ui.root_panel, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING | UI_FILL_ALL);
+			g_ui.display_modes_pane = UITabPaneCreate(g_ui.main_panel, UI_FILL_ALL, "gui\tconsole\tlog");
+				g_ui.gui_display_pane = UISplitPaneCreate(g_ui.display_modes_pane, UI_FILL_ALL | UI_SPLIT_PANE_VERTICAL, .5f);
+					g_ui.dirs_pane = UISplitPaneCreate(g_ui.gui_display_pane, UI_FILL_ALL, .55f);
+						temp = UITabPaneCreate(g_ui.dirs_pane, UI_FILL_ALL, "directories");
+						g_ui.dir_names_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
+						temp = UITabPaneCreate(g_ui.dirs_pane, UI_FILL_ALL, "sizes");
+						g_ui.dir_sizes_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
+					g_ui.files_pane = UISplitPaneCreate(g_ui.gui_display_pane, UI_FILL_ALL, .6f);
+						temp = UITabPaneCreate(g_ui.files_pane, UI_FILL_ALL, "files");
+						g_ui.file_names_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
+						temp = UITabPaneCreate(g_ui.files_pane, UI_FILL_ALL, "sizes");
+						g_ui.file_sizes_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
+				g_ui.console_code = UICodeCreate(g_ui.display_modes_pane, UI_ALIGN_CENTER | UI_FILL_ALL);
+				g_ui.log_panel = UIPanelCreate(g_ui.display_modes_pane, UI_FILL_ALL);
+					g_ui.log_code = UICodeCreate(g_ui.log_panel, UI_ALIGN_CENTER | UI_FILL_ALL);
+					g_ui.clear_log_button = UIButtonCreate(g_ui.log_panel, UI_ELEMENT_H_FILL, "Clear Log", -1);
+			g_ui.button_panel = UIPanelCreate(g_ui.main_panel, UI_PANEL_HORIZONTAL | UI_ELEMENT_H_FILL);
+				g_ui.reload_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Rld", -1);
+				g_ui.rewind_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Bck", -1);
+				g_ui.enter_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Ent", -1);
+				g_ui.next_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Nxt", -1);
+				g_ui.previous_button = UIButtonCreate(g_ui.button_panel, UI_ELEMENT_H_FILL, "Prv", -1);
 	}
 	// @formatter:on
 
@@ -87,6 +188,10 @@ void ui_create_all()
 	g_ui.enter_button->invoke = ui_enter_button_cb;
 	g_ui.next_button->invoke = ui_next_button_cb;
 	g_ui.previous_button->invoke = ui_previous_button_cb;
+
+	UIElementRefresh(g_ui.root_panel);
+
+	ui_force_full_redraw();
 
 	ui_log("initialized all ui elements");
 }
@@ -141,6 +246,8 @@ void ui_render()
 	UIElementRefresh(g_ui.files_pane);
 	UIElementRefresh(g_ui.file_names_panel);
 	UIElementRefresh(g_ui.file_sizes_panel);
+
+	ui_force_full_redraw();
 }
 
 void ui_render_console()
@@ -337,7 +444,7 @@ void ui_log(char * msg)
 	);
 	UICodeInsertContent(g_ui.log_code, log_msg, -1, false);
 	UIElementRefresh(g_ui.log_code);
-	free(log_msg);
+	// free(log_msg); // todo find out why this causes stack corruption
 }
 
 void ui_clear_log()

@@ -171,20 +171,21 @@ dir_tree_dir_s mk_dir_tree_dir(char * path, char * name, size_t threading_depth)
 	return result;
 }
 
-void * mk_dir_tree_debug_stats_thread_proc(void*)
+void * mk_dir_tree_debug_stats_thread_proc(void *)
 {
+	return NULL; // todo remove
 #pragma push_macro("render")
-#define render(thread_count) 												\
-     do                      												\
-	 {																		\
-    	system("cls");														\
-		pthread_mutex_lock(&g_logic.analysis_stats.thread_count_mutex);					\
-		pthread_mutex_lock(&g_logic.analysis_stats.computed_directories_count_mutex);	\
-		printf("thread count : %llu\ncomputed directories : %llu\n"			\
-		       , thread_count, g_logic.analysis_stats.computed_directories_count);		\
-		pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);               \
-		pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);	\
-	} while(0)
+#define render(thread_count)                                                \
+     do                                                                    \
+     {                                                                        \
+        system("cls");                                                        \
+        pthread_mutex_lock(&g_logic.analysis_stats.thread_count_mutex);                    \
+        pthread_mutex_lock(&g_logic.analysis_stats.computed_directories_count_mutex);    \
+        printf("thread count : %llu\ncomputed directories : %llu\n"            \
+               , thread_count, g_logic.analysis_stats.computed_directories_count);        \
+        pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);               \
+        pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);    \
+    } while(0)
 
 	__ATOMIC_ACQUIRE;
 
@@ -226,6 +227,12 @@ dir_tree_s mk_dir_tree()
 
 	// run mk_dir_tree_dir()
 	*tree.root = mk_dir_tree_dir(cwd, "", 0);
+
+	// debug infinite loop. used for ui debugging so far.
+	__ATOMIC_ACQUIRE;
+#if LOGIC_INFINITE_ANALYSIS
+	for(;;);
+#endif
 
 	// inform other threads we're done with the analysis here, they don't need to know we're still destroying stuff
 	__ATOMIC_ACQUIRE;

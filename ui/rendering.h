@@ -6,11 +6,19 @@
 
 #include "../logic/dir_tree/dir_tree.h"
 
+void ui_force_full_redraw();
+
 // loading screen functions. only called before any of the below-mentioned 'main' functions
 
+// used only by ui_loading_screen_thread_proc()
 void ui_create_loading_screen();
 
+// recomputes the loading screen panel's size to fit all elements in
+void ui_resize_loading_screen_panel();
+
 void ui_render_loading_screen();
+
+// void * ui_loading_screen_thread_proc(void *);
 
 // main ui functions. only called before any of the above-mentioned 'main' functions
 
