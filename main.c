@@ -16,8 +16,8 @@
 
 enum
 {
-	F_UI_THREAD_INITIALIZED,
-	F_UI_THREAD_ALIVE
+	F_UI_THREAD_INITIALIZED = 1,
+	F_UI_THREAD_ALIVE = 1 << 1
 };
 
 volatile uint8_t flags;
@@ -76,7 +76,7 @@ int main()
 
 	__ATOMIC_ACQUIRE;
 
-	while(!((flags & F_UI_THREAD_INITIALIZED) > 0));
+	while(!(flags & F_UI_THREAD_INITIALIZED));
 
 	__ATOMIC_RELEASE;
 

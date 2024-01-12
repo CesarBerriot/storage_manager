@@ -63,7 +63,7 @@ target_compile_options(storage_manager PRIVATE
         -fshort-enums
         # global preprocessor definitions
         -DUI_LOADING_SCREEN_LABELS_STR_BUFFERS_LENGTH=100
-        -DLOGIC_INFINITE_ANALYSIS=1 # make analysis of the file architecture infinite (basically adds for(;;)) for debugging purposes
+        -DLOGIC_INFINITE_ANALYSIS=0 # make analysis of the file architecture infinite (basically adds for(;;)) for debugging purposes
         -DLOGIC_ANALYSIS_MAX_THREADING_DEPTH=5
         # silencing trivial warnings
         -Wno-incompatible-pointer-types
