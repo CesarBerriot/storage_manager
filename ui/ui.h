@@ -8,6 +8,8 @@
 #include "rendering.h"
 #include "callbacks.h"
 
+typedef struct UIPieChart UIPieChart;
+
 //@formatter:off
 extern struct g_ui_struct
 {
@@ -29,6 +31,7 @@ extern struct g_ui_struct
 	UISplitPane	* 						files_pane;
 	UIPanel	 	* 							file_names_panel;
 	UIPanel	 	* 							file_sizes_panel;
+	UIPieChart 	*					pie_chart_element;
 	UICode	 	* 					console_code;
 	UIPanel	 	* 					log_panel;
 	UICode	 	* 						log_code;

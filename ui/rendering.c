@@ -12,6 +12,7 @@
 #include "../shared/macros.h"
 #include "../logic/logic.h"
 #include "rendering.h"
+#include "pie chart/pie chart.h"
 
 void ui_force_full_redraw()
 {
@@ -178,7 +179,7 @@ void ui_create_all()
 		};
 		UIElement * temp;
 		g_ui.main_panel = UIPanelCreate(g_ui.root_panel, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING | UI_FILL_ALL);
-			g_ui.display_modes_pane = UITabPaneCreate(g_ui.main_panel, UI_FILL_ALL, "gui\tconsole\tlog");
+			g_ui.display_modes_pane = UITabPaneCreate(g_ui.main_panel, UI_FILL_ALL, "gui\tpie chart\tconsole\tlog");
 				g_ui.gui_display_pane = UISplitPaneCreate(g_ui.display_modes_pane, UI_FILL_ALL | UI_SPLIT_PANE_VERTICAL, .5f);
 					g_ui.dirs_pane = UISplitPaneCreate(g_ui.gui_display_pane, UI_FILL_ALL, .55f);
 						temp = UITabPaneCreate(g_ui.dirs_pane, UI_FILL_ALL, "directories");
@@ -190,6 +191,7 @@ void ui_create_all()
 						g_ui.file_names_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
 						temp = UITabPaneCreate(g_ui.files_pane, UI_FILL_ALL, "sizes");
 						g_ui.file_sizes_panel = UIPanelCreate(temp, UI_LIST_FLAGS);
+				g_ui.pie_chart_element = UIPieChartCreate(g_ui.display_modes_pane, UI_FILL_ALL);
 				g_ui.console_code = UICodeCreate(g_ui.display_modes_pane, UI_ALIGN_CENTER | UI_FILL_ALL);
 				g_ui.log_panel = UIPanelCreate(g_ui.display_modes_pane, UI_FILL_ALL);
 					g_ui.log_code = UICodeCreate(g_ui.log_panel, UI_ALIGN_CENTER | UI_FILL_ALL);
