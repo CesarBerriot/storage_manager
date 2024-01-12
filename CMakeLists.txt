@@ -22,7 +22,9 @@ add_executable(storage_manager WIN32
         logic/logic.h
         logic/logic.c
         shared/macros.h
-        ui/ui.c)
+        ui/ui.c
+        threads/threads.h
+        threads/threads.c)
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 

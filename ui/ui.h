@@ -12,14 +12,14 @@
 extern struct g_ui_struct
 {
 	UIWindow 	*	window;
-	UIPanel		*		root_panel;
-	UIPanel		*			loading_screen_panel;
-	UISpacer	*				loading_screen_spacer;
-	UIGauge		*				loading_screen_gauge;
-	UILabel		*				loading_screen_thread_count_label;
-	UILabel		*				loading_screen_max_thread_count_label;
-	UILabel		*				loading_screen_computed_directories_count_label;
-	UILabel		*				loading_screen_status_label;
+	UIPanel		*		root_panel; struct {
+	UIPanel		*			panel;
+	UISpacer	*				spacer;
+	UIGauge		*				gauge;
+	UILabel		*				thread_count_label;
+	UILabel		*				max_thread_count_label;
+	UILabel		*				computed_directories_count_label;
+	UILabel		*				status_label; } loading_screen;
 	UIPanel	 	*			main_panel;
 	UITabPane 	*				display_modes_pane;
 	UISplitPane	* 					gui_display_pane;

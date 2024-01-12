@@ -30,14 +30,14 @@ void ui_create_loading_screen()
 		UI_LIST_FLAGS = UI_PANEL_SCROLL | UI_PANEL_MEDIUM_SPACING | UI_FILL_ALL
 	};
 	// @formatter:off
-	g_ui.loading_screen_panel = UIPanelCreate(g_ui.root_panel, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING);
-		g_ui.loading_screen_spacer = UISpacerCreate(g_ui.loading_screen_panel, 0, 0, 0);
-		UILabelCreate(g_ui.loading_screen_panel, 0, "loading", -1);
-		g_ui.loading_screen_gauge = UIGaugeCreate(g_ui.loading_screen_panel, 0);
-		g_ui.loading_screen_thread_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, "1", -1);
-		g_ui.loading_screen_max_thread_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, "2", -1);
-		g_ui.loading_screen_computed_directories_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, "3", -1);
-		g_ui.loading_screen_status_label = UILabelCreate(g_ui.loading_screen_panel, 0, "4", -1);
+	g_ui.loading_screen.panel = UIPanelCreate(g_ui.root_panel, UI_PANEL_GRAY | UI_PANEL_MEDIUM_SPACING);
+		g_ui.loading_screen.spacer = UISpacerCreate(g_ui.loading_screen.panel, 0, 0, 0);
+		UILabelCreate(g_ui.loading_screen.panel, 0, "loading", -1);
+		g_ui.loading_screen.gauge = UIGaugeCreate(g_ui.loading_screen.panel, 0);
+		g_ui.loading_screen.thread_count_label = UILabelCreate(g_ui.loading_screen.panel, 0, "1", -1);
+		g_ui.loading_screen.max_thread_count_label = UILabelCreate(g_ui.loading_screen.panel, 0, "2", -1);
+		g_ui.loading_screen.computed_directories_count_label = UILabelCreate(g_ui.loading_screen.panel, 0, "3", -1);
+		g_ui.loading_screen.status_label = UILabelCreate(g_ui.loading_screen.panel, 0, "4", -1);
 	// @formatter:on
 	UIElementRefresh(g_ui.root_panel);
 	ui_force_full_redraw();
@@ -47,13 +47,13 @@ void ui_resize_loading_screen_panel()
 {
 	enum { LOADING_SCREEN_ELEMENTS_COUNT = 6 };
 	UIElement * loading_screen_elements[LOADING_SCREEN_ELEMENTS_COUNT] = {
-		g_ui.loading_screen_gauge, g_ui.loading_screen_thread_count_label,
-		g_ui.loading_screen_max_thread_count_label,
-		g_ui.loading_screen_computed_directories_count_label,
-		g_ui.loading_screen_status_label,
+		g_ui.loading_screen.gauge, g_ui.loading_screen.thread_count_label,
+		g_ui.loading_screen.max_thread_count_label,
+		g_ui.loading_screen.computed_directories_count_label,
+		g_ui.loading_screen.status_label,
 		// yeah so that's sketchy asf but I put in a text twice so that
 		// the "loading" one gets counted in for computations
-		g_ui.loading_screen_status_label
+		g_ui.loading_screen.status_label
 	};
 
 
@@ -78,9 +78,9 @@ void ui_resize_loading_screen_panel()
 		0, // window_vertical_middle - sum_height_half,
 		g_ui.window->e.bounds.b // window_vertical_middle + sum_height_half
 	};
-	g_ui.loading_screen_spacer->height = window_vertical_middle - sum_height_half;
-	UIElementRefresh(g_ui.loading_screen_spacer);
-	UIElementMove(g_ui.loading_screen_panel, new_panel_bounds, false);
+	g_ui.loading_screen.spacer->height = window_vertical_middle - sum_height_half;
+	UIElementRefresh(g_ui.loading_screen.spacer);
+	UIElementMove(g_ui.loading_screen.panel, new_panel_bounds, false);
 }
 
 void ui_render_loading_screen()
@@ -94,8 +94,8 @@ void ui_render_loading_screen()
 
 	// refresh dir count label
 	snprintf(buffer, LABEL_BUFFERS_LENGTH, "parsed directories : %llu", g_logic.analysis_stats.computed_directories_count);
-	UIElementDestroy(g_ui.loading_screen_computed_directories_count_label);
-	g_ui.loading_screen_computed_directories_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, buffer, strlen(buffer));
+	UIElementDestroy(g_ui.loading_screen.computed_directories_count_label);
+	g_ui.loading_screen.computed_directories_count_label = UILabelCreate(g_ui.loading_screen.panel, 0, buffer, strlen(buffer));
 
 	// unlock dir count mutex
 	pthread_mutex_unlock(&g_logic.analysis_stats.computed_directories_count_mutex);
@@ -114,7 +114,7 @@ void ui_render_loading_screen()
 			if(counter > 5)
 			{
 				counter_check_passed = true;
-				// if the width of g_ui.loading_screen_panel decreases
+				// if the width of g_ui.loading_screen.panel decreases
 				// after this change, old (status) text pixels might end up
 				// not being drawn over, as luigi will use previous cached
 				// frames to keep drawing g_ui.root_panel. under those
@@ -127,36 +127,36 @@ void ui_render_loading_screen()
 	if(g_logic.analysis_stats.thread_count)
 	{
 		if(counter_check_passed)
-			g_ui.loading_screen_gauge->position = 1.f - g_logic.analysis_stats.thread_count / (float)g_logic.analysis_stats.max_recorded_threads;
+			g_ui.loading_screen.gauge->position = 1.f - g_logic.analysis_stats.thread_count / (float)g_logic.analysis_stats.max_recorded_threads;
 		else
-			g_ui.loading_screen_gauge->position = 0.f;
+			g_ui.loading_screen.gauge->position = 0.f;
 	}
 	else
-		g_ui.loading_screen_gauge->position = 1.f;
+		g_ui.loading_screen.gauge->position = 1.f;
 	last_max_threads = g_logic.analysis_stats.max_recorded_threads;
-	UIElementRefresh(g_ui.loading_screen_gauge);
+	UIElementRefresh(g_ui.loading_screen.gauge);
 
 	// refresh thread count label
 	snprintf(buffer, LABEL_BUFFERS_LENGTH, "threads : %llu", g_logic.analysis_stats.thread_count);
-	UIElementDestroy(g_ui.loading_screen_thread_count_label);
-	g_ui.loading_screen_thread_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, buffer, strlen(buffer));
+	UIElementDestroy(g_ui.loading_screen.thread_count_label);
+	g_ui.loading_screen.thread_count_label = UILabelCreate(g_ui.loading_screen.panel, 0, buffer, strlen(buffer));
 
 	// refresh max thread count label
 	snprintf(buffer, LABEL_BUFFERS_LENGTH, "max simultaneous threads : %llu", g_logic.analysis_stats.max_recorded_threads);
-	UIElementDestroy(g_ui.loading_screen_max_thread_count_label);
-	g_ui.loading_screen_max_thread_count_label = UILabelCreate(g_ui.loading_screen_panel, 0, buffer, strlen(buffer));
+	UIElementDestroy(g_ui.loading_screen.max_thread_count_label);
+	g_ui.loading_screen.max_thread_count_label = UILabelCreate(g_ui.loading_screen.panel, 0, buffer, strlen(buffer));
 
 	// unlock thread count mutex
 	pthread_mutex_unlock(&g_logic.analysis_stats.thread_count_mutex);
 
 	// refresh status label
 	char * status_text = counter_check_passed ? "status : analysing" : "status : discovering files and folders";
-	UIElementDestroy(g_ui.loading_screen_status_label);
-	g_ui.loading_screen_status_label = UILabelCreate(g_ui.loading_screen_panel, 0, status_text, -1);
+	UIElementDestroy(g_ui.loading_screen.status_label);
+	g_ui.loading_screen.status_label = UILabelCreate(g_ui.loading_screen.panel, 0, status_text, -1);
 
 	ui_resize_loading_screen_panel();
 
-	UIElementRefresh(g_ui.loading_screen_panel);
+	UIElementRefresh(g_ui.loading_screen.panel);
 
 	free(buffer);
 
