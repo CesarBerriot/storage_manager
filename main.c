@@ -17,6 +17,7 @@
 #include "ui/ui.h"
 
 #include <stdio.h>
+
 int main()
 {
 	// enable escape codes processing for debug purposes
@@ -48,8 +49,16 @@ int main()
 	r = pthread_create(&loading_screen_thread, NULL, loading_screen_loop_thread_proc, NULL);
 	assert(!r);
 	__ATOMIC_ACQUIRE;
+	// acquire realtime process priority for the analysis
+	r = SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+	assert(r);
+	__ATOMIC_ACQUIRE;
 	// run analysis on this thread
 	logic_analyze_current_directory();
+	__ATOMIC_ACQUIRE;
+	// restore process priority
+	r = SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+	assert(r);
 	__ATOMIC_ACQUIRE;
 	// wait for the analysis to finish by joining the loading screen thread
 	r = pthread_join(loading_screen_thread, NULL);
@@ -59,18 +68,17 @@ int main()
 	ui_create_all();
 	ui_render();
 	__ATOMIC_ACQUIRE;
-	puts("pre ui thread join");
 	// let the ui thread do its thing
 	r = pthread_join(ui_thread, NULL);
 	assert(!r);
-
-	puts("post ui thread join");
 
 	// I couldn't begin to tell you why in the fuck this is required
 	// ig it's got smth to do with the ui library
 	// like smth along the lines of the library expecting the thread
 	// that ends the ui to also be the last one
 	// maybe there's some buggy post exit code in there
+	// although I couldn't find any atexit() calls in it
+	// so it gotta be some obscure winapi function or smth
 	// todo find an actual solution
 	exit(EXIT_SUCCESS);
 }

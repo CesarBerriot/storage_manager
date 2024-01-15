@@ -26,7 +26,8 @@ add_executable(storage_manager WIN32
         threads/threads.h
         threads/threads.c
         "ui/pie chart/pie chart.c"
-        "ui/pie chart/pie chart.h")
+        "ui/pie chart/pie chart.h"
+        global_macros.h)
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 
@@ -69,7 +70,7 @@ target_compile_options(storage_manager PRIVATE
         -DUI_LOADING_SCREEN_LABELS_STR_BUFFERS_LENGTH=100
         -DLOGIC_INFINITE_ANALYSIS=0 # make analysis of the file architecture infinite (basically adds for(;;)) for debugging purposes
         -DLOGIC_ANALYSIS_MAX_THREADING_DEPTH=5
-        #"-D\"RGB8(r, g, b) = (r << 16) | (g << 8) | b)\"" # todo fix
+        -include ${PROJECT_SOURCE_DIR}/global_macros.h
         # silencing trivial warnings
         -Wno-incompatible-pointer-types
         -Wno-compare-distinct-pointer-types # broken on gcc ? check out RENDER_LIST() is rendering.c
