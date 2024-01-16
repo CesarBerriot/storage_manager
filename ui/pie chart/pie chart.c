@@ -6,6 +6,7 @@
 #include <math.h>
 #include <malloc.h>
 #include "pie chart.h"
+#include "vec2.h"
 
 UIPieChart * UIPieChartCreate(UIElement * parent, uint32_t flags)
 {
@@ -59,6 +60,10 @@ int UIPieChartMessage(UIElement * element, UIMessage message, int di, void * dp)
 				, square_rect.t + square_rect_width_half
 			};
 			UIDrawCircle(painter, square_rect_center.x, square_rect_center.y, square_rect_width_half, 25);
+			UIRectangle bottom_left_invert_rect = { bounds.l, square_rect_center.x, square_rect_center.y, bounds.b };
+			UIRectangle top_right_invert_rect = { square_rect_center.x, bounds.r, bounds.t, square_rect_center.y };
+			UIDrawInvert(painter, bottom_left_invert_rect);
+			UIDrawInvert(painter, top_right_invert_rect);
 		}
 			break;
 		case UI_MSG_GET_WIDTH:
@@ -71,45 +76,60 @@ int UIPieChartMessage(UIElement * element, UIMessage message, int di, void * dp)
 
 void UIDrawCircle(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness)
 {
-	struct vec2 { size_t x, y; };
+	enum
+	{
+		CIRCLE_POINTS_COUNT = 360,
+		STEP = 1,
+		POINTS_COUNT = CIRCLE_POINTS_COUNT / STEP
+	};
 
-	// todo make this a variable ?
-	enum { CIRCLE_POINTS_COUNT = 360 };
+	static_assert(!(CIRCLE_POINTS_COUNT % STEP));
 
 	// allocating buffers for interior and exterior vertex arrays
 	struct
 	{
-		struct vec2 * interior_vertices;
-		struct vec2 * exterior_vertices;
+		struct vec2 * inner_vertices;
+		struct vec2 * outer_vertices;
 		size_t len; // amount of vec2's in there, not length in bytes
 	} vertex_arrays;
-	vertex_arrays.len = CIRCLE_POINTS_COUNT;
-	vertex_arrays.interior_vertices = malloc(vertex_arrays.len * sizeof(struct vec2));
-	vertex_arrays.exterior_vertices = malloc(vertex_arrays.len * sizeof(struct vec2));
+	vertex_arrays.len = CIRCLE_POINTS_COUNT / STEP;
+	vertex_arrays.inner_vertices = malloc(vertex_arrays.len * sizeof(struct vec2));
+	vertex_arrays.outer_vertices = malloc(vertex_arrays.len * sizeof(struct vec2));
 
 	// filling the vertex arrays
-	for(register uint16_t prev = CIRCLE_POINTS_COUNT - 1, i = 0; i <= CIRCLE_POINTS_COUNT; prev = i++)
+	for(register uint16_t i = 0; i < POINTS_COUNT; ++i)
 	{
 #pragma push_macro("TO_RAD")
 #define TO_RAD(x) (M_PI * 2 * (x) / 360.)
-		double prev_rad = TO_RAD(prev);
-		double i_rad = TO_RAD(i);
+		double i_rad = TO_RAD(i * STEP);
 #pragma pop_macro("TO_RAD")
 #pragma push_macro("POS")
-#define POS() (square_rect.l)
-		struct vec2 from = {
-			x + radius * cos(prev_rad)
-			, y + radius * sin(prev_rad)
-		};
-		struct vec2 to = {
+		struct vec2 point = {
 			x + radius * cos(i_rad)
 			, y + radius * sin(i_rad)
 		};
 #pragma pop_macro("POS")
-		UIDrawLine(painter, from.x, from.y, to.x, to.y, RGB8(0, 255, 0));
+		struct vec2 dir = vec2_normalize(vec2_sub_2(point, vec2_create_2(x, y)));
+		vertex_arrays.inner_vertices[i] = vec2_sub_2(point, vec2_mult(dir, thickness / 2.));;
+		vertex_arrays.outer_vertices[i] = vec2_add_2(point, vec2_mult(dir, thickness / 2.));
+	}
+
+	// draw the circle
+	for(register uint16_t prev = POINTS_COUNT - 1, i = 0; i < POINTS_COUNT; prev = i++)
+	{
+		struct vec2 prev_inner = vertex_arrays.inner_vertices[prev];
+		struct vec2 i_inner = vertex_arrays.inner_vertices[i];
+		struct vec2 prev_outer = vertex_arrays.outer_vertices[prev];
+		struct vec2 i_outer = vertex_arrays.outer_vertices[i];
+		UIDrawTriangle(painter, prev_inner.x, prev_inner.y, prev_outer.x, prev_outer.y, i_outer.x, i_outer.y, RGB8(255, 255, 0));
+		UIDrawTriangle(painter, i_outer.x, i_outer.y, i_inner.x, i_inner.y, prev_inner.x, prev_inner.y, RGB8(255, 255, 0));
+		// normally the above 2 draws are enough to fill the whole thing
+		// but the ui library leaves a gap in-between the triangles
+		UIDrawTriangle(painter, prev_inner.x, prev_inner.y, prev_outer.x, prev_outer.y, i_inner.x, i_inner.y, RGB8(255, 255, 0));
+		UIDrawTriangle(painter, i_outer.x, i_outer.y, i_inner.x, i_inner.y, prev_outer.x, prev_outer.y, RGB8(255, 255, 0));
 	}
 
 	// freeing the vertex arrays
-	free(vertex_arrays.interior_vertices);
-	free(vertex_arrays.exterior_vertices);
+	free(vertex_arrays.inner_vertices);
+	free(vertex_arrays.outer_vertices);
 }

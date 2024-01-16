@@ -27,7 +27,9 @@ add_executable(storage_manager WIN32
         threads/threads.c
         "ui/pie chart/pie chart.c"
         "ui/pie chart/pie chart.h"
-        global_macros.h)
+        global_macros.h
+        "ui/pie chart/vec2.h"
+        "ui/pie chart/vec2.c")
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 
@@ -66,6 +68,7 @@ target_compile_options(storage_manager PRIVATE
         -fno-exceptions
         -fno-common # prevents tentative definitions (treating uninitialized multiple definitions as an extern definition defined in a single translation unit)
         -fshort-enums
+       # -O0 # uncomment for debugging
         # global preprocessor definitions
         -DUI_LOADING_SCREEN_LABELS_STR_BUFFERS_LENGTH=100
         -DLOGIC_INFINITE_ANALYSIS=0 # make analysis of the file architecture infinite (basically adds for(;;)) for debugging purposes
