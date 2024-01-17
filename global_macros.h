@@ -4,4 +4,4 @@
 
 #pragma once
 
-#define RGB8(r, g, b) ((r << 16) | (g << 8) | b)
+#define RGB8(r, g, b) ((255 << 24) | (r << 16) | (g << 8) | b)

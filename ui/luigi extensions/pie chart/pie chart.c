@@ -18,19 +18,13 @@ int UIPieChartMessage(UIElement * element, UIMessage message, int di, void * dp)
 {
 	switch(message)
 	{
-		case UI_MSG_LAYOUT:
-			//element->children = NULL;
-			//UIElementMove(element, element->bounds, false);
-			break;
 		case UI_MSG_PAINT:
 		{
-
+			// a good-looking gnome-feeling dark red I found out randomly
+			// while doing some testing with colors
+			uint32_t gnome_red = (20 << 16) | (0 << 8) | 20;
 			UIPainter * painter = dp;
 			UIRectangle bounds = g_ui.pie_chart_element->e.bounds;
-			UIDrawBlock(painter, bounds, (20 << 16) | (0 << 8) | 20);
-			UIDrawLine(painter, bounds.l, bounds.t, bounds.r, bounds.b, RGB8(255, 255, 0));
-			UIDrawGlyph(painter, bounds.l + 150, bounds.t + 150, 'f', RGB8(255, 255, 255));
-			UIDrawTriangle(painter, bounds.l, bounds.b, bounds.l + (bounds.r - bounds.l) / 2, bounds.t, bounds.r, bounds.b, RGB8(255, 0, 0));
 			UIRectangle square_rect;
 			size_t horizontal_length = bounds.r - bounds.l;
 			size_t vertical_length = bounds.b - bounds.t;
@@ -53,7 +47,18 @@ int UIPieChartMessage(UIElement * element, UIMessage message, int di, void * dp)
 				square_rect.t = mid_vertical - distHalf;
 				square_rect.b = mid_vertical + distHalf;
 			}
-			UIDrawBlock(painter, square_rect, RGB8(0, 0, 255));
+			//UIDrawBlock(painter, bounds, gnome_red);
+			//UIDrawBlock(painter, square_rect, RGB8(0, 0, 255));
+			{
+				UIRectangle right_square_rect = { square_rect.r, bounds.r, bounds.t, bounds.b };
+				UIRectangle left_square_rect = { bounds.l, square_rect.l, bounds.t, bounds.b };
+				UIRectangle up_square_rect = { bounds.l, bounds.r, bounds.t, square_rect.t };
+				UIRectangle down_square_rect = { bounds.l, bounds.r, square_rect.b, bounds.b };
+				UIDrawBlock(painter, right_square_rect, gnome_red);
+				UIDrawBlock(painter, left_square_rect, gnome_red);
+				UIDrawBlock(painter, up_square_rect, gnome_red);
+				UIDrawBlock(painter, down_square_rect, gnome_red);
+			}
 			size_t square_rect_width = square_rect.r - square_rect.l;
 			size_t square_rect_width_half = square_rect_width / 2;
 			struct { size_t x, y; } square_rect_center = {
@@ -61,10 +66,7 @@ int UIPieChartMessage(UIElement * element, UIMessage message, int di, void * dp)
 				, square_rect.t + square_rect_width_half
 			};
 			UIDrawCircle(painter, square_rect_center.x, square_rect_center.y, square_rect_width_half, 25, RGB8(0, 0, 0));
-			UIRectangle bottom_left_invert_rect = { bounds.l, square_rect_center.x, square_rect_center.y, bounds.b };
-			UIRectangle top_right_invert_rect = { square_rect_center.x, bounds.r, bounds.t, square_rect_center.y };
-			UIDrawInvert(painter, bottom_left_invert_rect);
-			UIDrawInvert(painter, top_right_invert_rect);
+			// UIAntiAlias(painter, bounds, 1, .5f);
 		}
 			break;
 		case UI_MSG_GET_WIDTH:

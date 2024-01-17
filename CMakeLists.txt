@@ -31,7 +31,9 @@ add_executable(storage_manager WIN32
         "data structures/vec2/vec2.h"
         "data structures/vec2/vec2.c"
         "ui/luigi extensions/general/general.c"
-        "ui/luigi extensions/general/general.h")
+        "ui/luigi extensions/general/general.h"
+        "threads/thread pool/thread_pool.c"
+        "threads/thread pool/thread_pool.h")
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 
@@ -63,7 +65,7 @@ target_compile_options(storage_manager PRIVATE
         # turns out I had problems getting some performance out of openacc so I ended up
         # just multithreading the whole thing myself using pthread and it works wonders
         # I didn't try openmp yet, I might give it a try later, might even use opencl
-        -fno-openacc
+        -fopenacc
         -fno-openmp
         # unrelated gcc optimization/code generation options
         -O3
@@ -72,7 +74,7 @@ target_compile_options(storage_manager PRIVATE
         -fno-exceptions
         -fno-common # prevents tentative definitions (treating uninitialized multiple definitions as an extern definition defined in a single translation unit)
         -fshort-enums
-       # -O0 # uncomment for debugging
+        -O0 # uncomment for debugging
         # global preprocessor definitions
         -DUI_LOADING_SCREEN_LABELS_STR_BUFFERS_LENGTH=100
         -DLOGIC_INFINITE_ANALYSIS=0 # make analysis of the file architecture infinite (basically adds for(;;)) for debugging purposes
