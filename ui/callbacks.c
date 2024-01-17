@@ -9,8 +9,8 @@
 #include <stdio.h>
 #include <shellapi.h>
 #include "callbacks.h"
-#include "../logic/logic.h"
-#include "../shared/fio.h"
+#include "logic/logic.h"
+#include "shared/fio.h"
 
 void ui_clear_log_button_cb(void *)
 {

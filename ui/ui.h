@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../luigi/luigi.h"
+#include "luigi/luigi.h"
 #include "rendering.h"
 #include "callbacks.h"
 

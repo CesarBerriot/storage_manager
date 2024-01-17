@@ -5,8 +5,8 @@
 #include "threads.h"
 
 #include <windows.h>
-#include "../ui/ui.h"
-#include "../logic/logic.h"
+#include "ui/ui.h"
+#include "logic/logic.h"
 
 struct g_threads_struct g_threads;
 

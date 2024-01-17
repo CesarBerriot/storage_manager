@@ -9,10 +9,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
-#include "../shared/macros.h"
-#include "../logic/logic.h"
+#include "shared/macros.h"
+#include "logic/logic.h"
 #include "rendering.h"
-#include "pie chart/pie chart.h"
+#include "luigi extensions/pie chart/pie chart.h"
 
 void ui_force_full_redraw()
 {

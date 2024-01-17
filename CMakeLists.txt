@@ -25,11 +25,13 @@ add_executable(storage_manager WIN32
         ui/ui.c
         threads/threads.h
         threads/threads.c
-        "ui/pie chart/pie chart.c"
-        "ui/pie chart/pie chart.h"
+        "ui/luigi extensions/pie chart/pie chart.c"
+        "ui/luigi extensions/pie chart/pie chart.h"
         global_macros.h
-        "ui/pie chart/vec2.h"
-        "ui/pie chart/vec2.c")
+        "data structures/vec2/vec2.h"
+        "data structures/vec2/vec2.c"
+        "ui/luigi extensions/general/general.c"
+        "ui/luigi extensions/general/general.h")
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 
@@ -41,6 +43,8 @@ target_link_options(storage_manager PRIVATE
         # other stuff
         -pthread
 )
+
+target_include_directories(storage_manager PRIVATE ${PROJECT_SOURCE_DIR})
 
 target_compile_options(storage_manager PRIVATE
         # ensure easy portability

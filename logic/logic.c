@@ -7,7 +7,7 @@
 #include <malloc.h>
 #include <string.h>
 #include "ref_globals.def"
-#include "../ui/ui.h"
+#include "ui/ui.h"
 
 struct g_logic_struct g_logic;
 

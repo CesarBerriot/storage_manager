@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../ui.h"
+#include "ui/ui.h"
 
 typedef struct UIPieChart
 {
@@ -17,4 +17,3 @@ UIPieChart * UIPieChartCreate(UIElement *parent, uint32_t flags);
 
 int UIPieChartMessage(UIElement *element, UIMessage message, int di, void *dp);
 
-void UIDrawCircle(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness);

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../logic/dir_tree/dir_tree.h"
+#include "logic/dir_tree/dir_tree.h"
 
 void ui_force_full_redraw();
 
