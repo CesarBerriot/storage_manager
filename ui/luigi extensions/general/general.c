@@ -7,26 +7,116 @@
 #include <math.h>
 #include <malloc.h>
 #include <memory.h>
+#include "threads/thread pool/thread_pool.h"
+
+struct draw_circle_parallel_thread_data
+{
+	struct draw_circle_args
+	{
+		UIPainter * painter;
+		size_t x, y;
+		size_t radius;
+		size_t thickness;
+		uint32_t color;
+	} * args;
+	size_t miny, maxy;
+	volatile bool task_done;
+};
+
+void * draw_circle_parallel_thread_proc(struct draw_circle_parallel_thread_data * data)
+{
+#pragma region
+#pragma push_macro("painter")
+#pragma push_macro("x")
+#pragma push_macro("y")
+#pragma push_macro("radius")
+#pragma push_macro("thickness")
+#pragma push_macro("color")
+#define painter data->args->painter
+#define x data->args->x
+#define y data->args->y
+#define radius data->args->radius
+#define thickness data->args->thickness
+#define color data->args->color
+#pragma endregion
+	assert(data);
+	for(size_t iy = data->miny; iy <= data->maxy; ++iy)
+		for(size_t ix = 0; ix <= painter->width; ++ix)
+		{
+			size_t len = vec2_len(vec2_sub_2(vec2_create_2(x, y), vec2_create_2(ix, iy)));
+			if(len < radius + thickness && len > radius - thickness)
+				painter->bits[iy * painter->width + ix] = color;
+		}
+
+	__ATOMIC_ACQUIRE;
+	data->task_done = true;
+#pragma region
+// had to needlessly undef everything before popping it bc if I don't
+// CLion's formatter goes full retard mode and no longer indents anything
+#undef painter
+#undef x
+#undef y
+#undef radius
+#undef thickness
+#undef color
+#pragma pop_macro("painter")
+#pragma pop_macro("x")
+#pragma pop_macro("y")
+#pragma pop_macro("radius")
+#pragma pop_macro("thickness")
+#pragma pop_macro("color")
+#pragma endregion
+}
+
+void UIDrawCircle(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness, uint32_t color)
+{
+	enum { PARALLEL_DRAW_THREADS = 2 };
+
+	struct vec2 pixel;
+	size_t squared_radius = pow(radius, 2);
+	size_t squared_thickness = pow(thickness, 2);
+
+	struct draw_circle_args args = { painter, x, y, radius, thickness, color };
+
+	struct draw_circle_parallel_thread_data parallel_threads_data[PARALLEL_DRAW_THREADS];
+	//memset(parallel_threads_data, 0, sizeof(struct draw_circle_parallel_thread_data) * PARALLEL_DRAW_THREADS);
+	struct thread_pool_task task;
+	task.func = draw_circle_parallel_thread_proc;
+	float step = painter->height / (float)PARALLEL_DRAW_THREADS;
+	for(size_t i = 0; i < PARALLEL_DRAW_THREADS; ++i)
+	{
+		struct draw_circle_parallel_thread_data * data = parallel_threads_data + i;
+		data->args = &args;
+		data->miny = i * step;
+		data->maxy = (i + 1) * step;
+		data->task_done = false;
+		task.arg = data;
+		if(i)
+			thread_pool_create_task(task);
+	}
+	draw_circle_parallel_thread_proc(&parallel_threads_data[0]);
+
+	/*for(size_t iy = 0; iy <= painter->height; ++iy)
+		for(size_t ix = 0; ix <= painter->width; ++ix)
+		{
+			size_t len = vec2_len(vec2_sub_2(vec2_create_2(x, y), vec2_create_2(ix, iy)));
+			if(len < radius + thickness && len > radius - thickness)
+				painter->bits[iy * painter->width + ix] = color;
+		}*/
+	__ATOMIC_ACQUIRE;
+	for(size_t i = 0; i < PARALLEL_DRAW_THREADS; ++i)
+		while(!parallel_threads_data[i].task_done);
+
+}
 
 // @formatter:off
-void UIDrawCircleEx(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness
+void UIDrawCircle2Ex(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness
 					, uint32_t color, bool free_vertex_array_buffers
 					, struct vec2 ** out_inner_vertices, struct vec2 ** out_outer_vertices
 					, size_t * out_vertex_count)
 // @formatter:on
 {
-	struct vec2 pixel;
-	size_t squared_radius = pow(radius, 2);
-	size_t squared_thickness = pow(thickness, 2);
-#pragma openacc parallel loop
-	for(size_t iy = 0; iy <= painter->height; ++iy)
-		for(size_t ix = 0; ix <= painter->width; ++ix)
-		{
-				size_t len = vec2_len(vec2_sub_2(vec2_create_2(x, y), vec2_create_2(ix, iy)));
-				if(len < radius + thickness && len > radius - thickness)
-					painter->bits[iy * painter->width + ix] = color;
-		}
-	/*enum
+	enum
 	{
 		CIRCLE_POINTS_MAX = 360,
 		STEP = 1,
@@ -91,7 +181,7 @@ void UIDrawCircleEx(UIPainter * painter, size_t x, size_t y, size_t radius, size
 		*out_inner_vertices = vertex_arrays.inner_vertices;
 		*out_outer_vertices = vertex_arrays.outer_vertices;
 		*out_vertex_count = vertex_arrays.len;
-	}*/
+	}
 }
 
 void UIAntiAlias(UIPainter * painter, UIRectangle bounds, uint8_t pixel_area_size, float weight)

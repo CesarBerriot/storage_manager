@@ -8,11 +8,11 @@
 #include "ui/ui.h"
 #include "logic/logic.h"
 
-struct g_threads_struct g_threads;
+struct g_main_threads_struct g_main_threads;
 
 void * ui_thread_proc(void *)
 {
-	g_threads.flags |= F_UI_THREAD_ALIVE;
+	g_main_threads.flags |= F_UI_THREAD_ALIVE;
 	__ATOMIC_RELEASE;
 
 	UIInitialise();
@@ -20,19 +20,19 @@ void * ui_thread_proc(void *)
 	g_ui.root_panel = UIPanelCreate(g_ui.window, UI_PANEL_GRAY);
 
 	__ATOMIC_ACQUIRE;
-	g_threads.flags |= F_UI_THREAD_INITIALIZED;
+	g_main_threads.flags |= F_UI_THREAD_INITIALIZED;
 	__ATOMIC_RELEASE;
 
 	UIMessageLoop();
 
 	__ATOMIC_ACQUIRE;
-	//g_threads.flags ^= g_threads.flags | F_UI_THREAD_ALIVE; // todo fix
-	g_threads.flags = 0;
+	//g_main_threads.flags ^= g_main_threads.flags | F_UI_THREAD_ALIVE; // todo fix
+	g_main_threads.flags = 0;
 }
 
 void * loading_screen_loop_thread_proc(void*)
 {
-	while(!g_logic.analysis_stats.is_done && g_threads.flags & F_UI_THREAD_ALIVE)
+	while(!g_logic.analysis_stats.is_done && g_main_threads.flags & F_UI_THREAD_ALIVE)
 	{
 		ui_render_loading_screen();
 		Sleep(50);

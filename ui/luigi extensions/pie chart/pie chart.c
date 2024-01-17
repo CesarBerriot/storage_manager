@@ -33,10 +33,10 @@ int UIPieChartMessage(UIElement * element, UIMessage message, int di, void * dp)
 			{
 				square_rect.t = bounds.t;
 				square_rect.b = bounds.b;
-				size_t distHalf = vertical_length / 2;
+				size_t dist_half = vertical_length / 2;
 				size_t mid_horizontal = bounds.r - horizontal_length / 2;
-				square_rect.l = mid_horizontal - distHalf;
-				square_rect.r = mid_horizontal + distHalf;
+				square_rect.l = mid_horizontal - dist_half;
+				square_rect.r = mid_horizontal + dist_half;
 			}
 			else
 			{

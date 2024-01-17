@@ -17,7 +17,7 @@ extern struct g_thread_pool_struct
 		void (* func)(void *);
 		void * arg;
 	} * tasks;
-	size_t tasks_len;
+	volatile size_t tasks_len;
 	pthread_mutex_t tasks_mutex;
 	volatile bool should_exit;
 } g_thread_pool;

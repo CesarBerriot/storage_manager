@@ -10,11 +10,13 @@
 struct color_rgb8 { uint32_t a : 8, r : 8, g : 8, b : 8; };
 
 // @formatter:off
-void UIDrawCircleEx(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness
+void UIDrawCircle(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness, uint32_t color);
+void UIDrawCircle2Ex(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness
 					, uint32_t color, bool free_vertex_array_buffers
 					, struct vec2 ** out_inner_vertices, struct vec2 ** out_outer_vertices
 					, size_t * out_vertex_count);
-__forceinline void UIDrawCircle(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness, uint32_t color) { UIDrawCircleEx(painter, x, y, radius, thickness, color, true, NULL, NULL, NULL); }
+/// @brief alternative method of drawing circles. might turn out to be faster for high-resolution circles
+__forceinline void UIDrawCircle2(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness, uint32_t color) { UIDrawCircle2Ex(painter, x, y, radius, thickness, color, true, NULL, NULL, NULL); }
 /**
  * @brief applies anti-aliasing across the whole painter using pre-filtering
  * @param pixel_area_size defines how large the area of pixels affecting a pixel's color is

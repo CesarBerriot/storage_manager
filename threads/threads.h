@@ -12,10 +12,10 @@ enum
 	F_UI_THREAD_ALIVE = 1 << 1
 };
 
-extern struct g_threads_struct
+extern struct g_main_threads_struct
 {
 	volatile uint8_t flags;
-} g_threads;
+} g_main_threads;
 
 void * ui_thread_proc(void *);
 

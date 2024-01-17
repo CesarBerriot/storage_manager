@@ -15,11 +15,18 @@
 #include "logic/logic.h"
 #include "threads/threads.h"
 #include "ui/ui.h"
+#include "threads/thread pool/thread_pool.h"
 
 #include <stdio.h>
+#include <crtdbg.h>
 
 int main()
 {
+	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+	thread_pool_init();
+	thread_pool_destroy();
+	puts("ok");
+	return 0;
 	// enable escape codes processing for debug purposes
 	DWORD mode;
 	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode);
@@ -29,8 +36,10 @@ int main()
 	pthread_t ui_thread;
 	pthread_t loading_screen_thread;
 
+	// init thread pool
+	thread_pool_init();
 	// init thread flags
-	g_threads.flags = 0;
+	g_main_threads.flags = 0;
 	__ATOMIC_ACQUIRE;
 	// memset(0) the tree struct
 	logic_initialize();
@@ -40,7 +49,7 @@ int main()
 	assert(!r);
 	__ATOMIC_ACQUIRE;
 	// await the ui thread's initialization
-	while(!(g_threads.flags & F_UI_THREAD_INITIALIZED));
+	while(!(g_main_threads.flags & F_UI_THREAD_INITIALIZED));
 	__ATOMIC_ACQUIRE;
 	// init loading screen ui
 	ui_create_loading_screen();
@@ -71,6 +80,9 @@ int main()
 	// let the ui thread do its thing
 	r = pthread_join(ui_thread, NULL);
 	assert(!r);
+	__ATOMIC_ACQUIRE;
+	// destroy the thread pool
+	thread_pool_destroy();
 
 	// I couldn't begin to tell you why in the fuck this is required
 	// ig it's got smth to do with the ui library
