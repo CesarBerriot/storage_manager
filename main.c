@@ -12,21 +12,22 @@
 #include <pthread.h>
 #include <assert.h>
 #include <windows.h>
+#include <stdio.h>
 #include "logic/logic.h"
 #include "threads/threads.h"
 #include "ui/ui.h"
 #include "threads/thread pool/thread_pool.h"
-
-#include <stdio.h>
-#include <crtdbg.h>
+#include "sqrt table/sqrt_table.h"
 
 int main()
 {
-	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
-	thread_pool_init();
-	thread_pool_destroy();
-	puts("ok");
-	return 0;
+	// fix clion stdout issue (https://intellij-support.jetbrains.com/hc/en-us/community/posts/115000740490-Where-did-the-black-windows-go-?page=1#community_comment_115000619510)
+	setbuf(stdout, 0);
+
+	// initialize the square root table (used only by the ui's circle drawing functions so far)
+	// todo parallelize this, it'll be a matter of 2mn
+	sqrt_table_init(40, UINT64_MAX);
+
 	// enable escape codes processing for debug purposes
 	DWORD mode;
 	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode);
@@ -66,7 +67,7 @@ int main()
 	logic_analyze_current_directory();
 	__ATOMIC_ACQUIRE;
 	// restore process priority
-	r = SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+	r = SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 	assert(r);
 	__ATOMIC_ACQUIRE;
 	// wait for the analysis to finish by joining the loading screen thread

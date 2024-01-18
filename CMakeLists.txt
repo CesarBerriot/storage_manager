@@ -33,7 +33,9 @@ add_executable(storage_manager #WIN32
         "ui/luigi extensions/general/general.c"
         "ui/luigi extensions/general/general.h"
         "threads/thread pool/thread_pool.c"
-        "threads/thread pool/thread_pool.h")
+        "threads/thread pool/thread_pool.h"
+        "sqrt table/sqrt_table.c"
+        "sqrt table/sqrt_table.h")
 
 target_link_libraries(storage_manager user32.lib gdi32.lib)
 

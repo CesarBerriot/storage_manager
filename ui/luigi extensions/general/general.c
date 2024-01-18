@@ -7,17 +7,19 @@
 #include <math.h>
 #include <malloc.h>
 #include <memory.h>
+#include "sqrt table/sqrt_table.h"
 #include "threads/thread pool/thread_pool.h"
 
 struct draw_circle_parallel_thread_data
 {
-	struct draw_circle_args
+	struct draw_circle_common_thread_data
 	{
 		UIPainter * painter;
 		size_t x, y;
 		size_t radius;
-		size_t thickness;
+		size_t thickness_half;
 		uint32_t color;
+		size_t minx, maxx;
 	} * args;
 	size_t miny, maxy;
 	volatile bool task_done;
@@ -30,21 +32,25 @@ void * draw_circle_parallel_thread_proc(struct draw_circle_parallel_thread_data 
 #pragma push_macro("x")
 #pragma push_macro("y")
 #pragma push_macro("radius")
-#pragma push_macro("thickness")
+#pragma push_macro("thickness_half")
 #pragma push_macro("color")
+#pragma push_macro("minx")
+#pragma push_macro("maxx")
 #define painter data->args->painter
 #define x data->args->x
 #define y data->args->y
 #define radius data->args->radius
-#define thickness data->args->thickness
+#define thickness_half data->args->thickness_half
 #define color data->args->color
+#define minx data->args->minx
+#define maxx data->args->maxx
 #pragma endregion
 	assert(data);
-	for(size_t iy = data->miny; iy <= data->maxy; ++iy)
-		for(size_t ix = 0; ix <= painter->width; ++ix)
+	for(size_t iy = data->miny; iy < data->maxy; ++iy)
+		for(size_t ix = minx; ix <= maxx; ++ix)
 		{
-			size_t len = vec2_len(vec2_sub_2(vec2_create_2(x, y), vec2_create_2(ix, iy)));
-			if(len < radius + thickness && len > radius - thickness)
+			size_t len = sqrt_table_approximate(vec2_squared_len(vec2_sub_2(vec2_create_2(x, y), vec2_create_2(ix, iy))));
+			if(len < radius + thickness_half / 2 && len > radius - thickness_half / 2)
 				painter->bits[iy * painter->width + ix] = color;
 		}
 
@@ -57,26 +63,33 @@ void * draw_circle_parallel_thread_proc(struct draw_circle_parallel_thread_data 
 #undef x
 #undef y
 #undef radius
-#undef thickness
+#undef thickness_half
 #undef color
+#undef minx
+#undef maxx
 #pragma pop_macro("painter")
 #pragma pop_macro("x")
 #pragma pop_macro("y")
 #pragma pop_macro("radius")
-#pragma pop_macro("thickness")
+#pragma pop_macro("thickness_half")
 #pragma pop_macro("color")
+#pragma pop_macro("minx")
+#pragma pop_macro("maxx")
 #pragma endregion
 }
 
 void UIDrawCircle(UIPainter * painter, size_t x, size_t y, size_t radius, size_t thickness, uint32_t color)
 {
-	enum { PARALLEL_DRAW_THREADS = 2 };
+	enum { PARALLEL_DRAW_THREADS = 15 };
 
 	struct vec2 pixel;
 	size_t squared_radius = pow(radius, 2);
 	size_t squared_thickness = pow(thickness, 2);
 
-	struct draw_circle_args args = { painter, x, y, radius, thickness, color };
+	size_t full_radius = radius + thickness / 2;
+	struct draw_circle_common_thread_data common_thread_data = { painter, x, y, radius, thickness / 2, color, x - full_radius, x + full_radius };
+	if(common_thread_data.minx > INT_MAX)
+		common_thread_data.minx = 0;
 
 	struct draw_circle_parallel_thread_data parallel_threads_data[PARALLEL_DRAW_THREADS];
 	//memset(parallel_threads_data, 0, sizeof(struct draw_circle_parallel_thread_data) * PARALLEL_DRAW_THREADS);
@@ -86,7 +99,7 @@ void UIDrawCircle(UIPainter * painter, size_t x, size_t y, size_t radius, size_t
 	for(size_t i = 0; i < PARALLEL_DRAW_THREADS; ++i)
 	{
 		struct draw_circle_parallel_thread_data * data = parallel_threads_data + i;
-		data->args = &args;
+		data->args = &common_thread_data;
 		data->miny = i * step;
 		data->maxy = (i + 1) * step;
 		data->task_done = false;

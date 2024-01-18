@@ -65,7 +65,7 @@ int UIPieChartMessage(UIElement * element, UIMessage message, int di, void * dp)
 				square_rect.l + square_rect_width_half
 				, square_rect.t + square_rect_width_half
 			};
-			UIDrawCircle(painter, square_rect_center.x, square_rect_center.y, square_rect_width_half, 25, RGB8(0, 0, 0));
+			UIDrawCircle(painter, square_rect_center.x, square_rect_center.y, square_rect_width_half / 1.5, 20, RGB8(0, 0, 0));
 			// UIAntiAlias(painter, bounds, 1, .5f);
 		}
 			break;
