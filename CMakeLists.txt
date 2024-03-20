@@ -3,7 +3,7 @@ project(storage_manager C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(storage_manager #WIN32
+add_executable(storage_manager WIN32
         main.c
         logic/dir_tree/dir_tree.c
         logic/dir_tree/dir_tree.h
